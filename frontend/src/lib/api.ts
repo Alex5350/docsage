@@ -1,0 +1,153 @@
+/**
+ * Typed fetch client for the DocSage REST API (docs/CONTRACT.md).
+ * Cookie auth: requests carry credentials so the HttpOnly `docsage_session`
+ * round-trips. Non-2xx JSON errors surface as ApiError {status, detail}.
+ */
+import type {
+  ChatMessage,
+  ChatScope,
+  ChatSession,
+  ChatStreamEvent,
+  HealthStatus,
+  User,
+} from "@/lib/types";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    detail: string,
+  ) {
+    super(detail);
+    this.name = "ApiError";
+  }
+}
+
+async function parseError(response: Response): Promise<ApiError> {
+  let detail = response.statusText || "The request failed.";
+  try {
+    const body = (await response.json()) as { detail?: string };
+    if (body.detail) detail = body.detail;
+  } catch {
+    // Non-JSON failure (proxy, network, HTML error page): keep the default.
+  }
+  return new ApiError(response.status, detail);
+}
+
+async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_BASE}/api${path}`, {
+    credentials: "include",
+    ...init,
+    headers: {
+      accept: "application/json",
+      ...(init?.body ? { "content-type": "application/json" } : {}),
+      ...init?.headers,
+    },
+  });
+  if (!response.ok) throw await parseError(response);
+  if (response.status === 204) return undefined as T;
+  return (await response.json()) as T;
+}
+
+/* -- health + auth -------------------------------------------------------- */
+
+export function getHealth(): Promise<HealthStatus> {
+  return requestJson<HealthStatus>("/health");
+}
+
+export function register(body: {
+  email: string;
+  password: string;
+  display_name: string;
+}): Promise<User> {
+  return requestJson<User>("/auth/register", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function login(body: { email: string; password: string }): Promise<User> {
+  return requestJson<User>("/auth/login", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function logout(): Promise<void> {
+  await requestJson<void>("/auth/logout", { method: "POST" });
+}
+
+export function getMe(): Promise<User> {
+  return requestJson<User>("/auth/me");
+}
+
+/* -- chat sessions -------------------------------------------------------- */
+
+export function createChatSession(scope: ChatScope): Promise<ChatSession> {
+  return requestJson<ChatSession>("/chat/sessions", {
+    method: "POST",
+    body: JSON.stringify({ scope }),
+  });
+}
+
+export async function listChatSessions(): Promise<ChatSession[]> {
+  const data = await requestJson<{ items: ChatSession[] }>("/chat/sessions");
+  return data.items;
+}
+
+export async function listChatMessages(sessionId: string): Promise<ChatMessage[]> {
+  const data = await requestJson<{ items: ChatMessage[] }>(`/chat/sessions/${sessionId}/messages`);
+  return data.items;
+}
+
+/* -- chat streaming (SSE) -------------------------------------------------- */
+
+/**
+ * POST a message and consume the text/event-stream reply. Emits parsed
+ * ChatStreamEvents as they arrive; resolves when the stream ends.
+ *
+ * The server sends JSON payloads on `data:` lines: {type:'delta'|'citations'|
+ * 'done'|'error'}. Parsing is manual (fetch + ReadableStream reader + line
+ * buffering) because EventSource cannot POST.
+ */
+export async function streamChatMessage(
+  sessionId: string,
+  content: string,
+  onEvent: (event: ChatStreamEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/chat/sessions/${sessionId}/messages`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "content-type": "application/json", accept: "text/event-stream" },
+    body: JSON.stringify({ content }),
+    signal,
+  });
+  if (!response.ok) throw await parseError(response);
+  if (!response.body) throw new ApiError(0, "The response had no body to stream.");
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  const handleChunk = (chunk: string) => {
+    // SSE events are separated by blank lines; each event's payload is one or
+    // more `data:` lines. The backend emits single-line JSON payloads.
+    const raw = chunk.replace(/^\s*data:\s?/, "");
+    if (!raw) return;
+    try {
+      onEvent(JSON.parse(raw) as ChatStreamEvent);
+    } catch {
+      // Ignore keep-alives / partial non-JSON lines.
+    }
+  };
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    for (;;) {
+      const newlineIndex = buffer.indexOf("\n");
+      if (newlineIndex === -1) break;
+      const line = buffer.slice(0, newlineIndex).replace(/\r$/, "");
+      buffer = buffer.slice(newlineIndex + 1);
+      handleChunk(line);
+    }
+  }
+  handleChunk(buffer.replace(/\r$/, ""));
+}
