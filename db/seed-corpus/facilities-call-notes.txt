@@ -1,0 +1,13 @@
+Facilities coordination call — March 4
+
+Attendees: Jordan (facilities), Sam (IT), Priya (safety)
+
+Floor 3 remodel starts April 14. IT needs the port map two weeks before demo day.
+The server closet on floor 3 moves to room 318; cooling upgrade is in the contract.
+Badge readers get replaced during the same window; expect a single-day outage per floor.
+Sam to confirm the UPS sizing by Friday. Priya confirmed emergency egress signage is unaffected.
+
+Action items:
+- Jordan: send the remodel timeline to the all-hands list (due 3/8)
+- Sam: UPS sizing confirmation (due 3/7)
+- Priya: safety walkthrough right after badge reader install
