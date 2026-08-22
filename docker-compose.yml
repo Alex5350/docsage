@@ -1,0 +1,20 @@
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    container_name: docsage-db
+    environment:
+      POSTGRES_USER: docsage
+      POSTGRES_PASSWORD: docsage
+      POSTGRES_DB: docsage
+    ports:
+      - "5433:5432"
+    volumes:
+      - docsage_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docsage -d docsage"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  docsage_pgdata:

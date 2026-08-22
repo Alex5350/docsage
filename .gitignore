@@ -1,0 +1,33 @@
+# dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# builds
+frontend/.next/
+frontend/out/
+dotnet/**/bin/
+dotnet/**/obj/
+backend/dist/
+*.nupkg
+
+# environment / secrets
+.env
+.env.local
+.env.*.local
+
+# uploads and runtime artifacts
+backend/var/
+*.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# This repo ships its compose file (some global ignores exclude docker-compose*.yml)
+!docker-compose.yml
