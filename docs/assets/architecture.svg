@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="800" viewBox="0 0 1440 800" role="img" aria-label="DocSage - one contract, two runtimes - Agentic RAG over enterprise documents with provider-qualified vector search. Animated flows: colored dashes move along request paths; node borders breathe.">
+  <title>DocSage - one contract, two runtimes</title>
+  <defs>
+    <pattern id="fi-dark-dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#1B2737"/>
+    </pattern>
+  </defs>
+  <style>
+    .fi-dark-node { fill: #0E1620; stroke: #22304A; stroke-width: 1.2; }
+    .fi-dark-edge { stroke: #1F2B3D; stroke-width: 1.5; fill: none; }
+    .fi-dark-pulse { animation: fi-dark-pulse 3s ease-in-out infinite; }
+    .fi-dark-flow-sky { stroke: #38BDF8; stroke-width: 2; fill: none; stroke-dasharray: 5 11; animation: fi-dark-dash-sky-f 1.5s linear infinite; }
+    .fi-dark-flow-sky-b { animation-name: fi-dark-dash-sky-b; }
+    .fi-dark-flow-emerald { stroke: #34D399; stroke-width: 2; fill: none; stroke-dasharray: 5 11; animation: fi-dark-dash-emerald-f 1.5s linear infinite; }
+    .fi-dark-flow-emerald-b { animation-name: fi-dark-dash-emerald-b; }
+    .fi-dark-flow-amber { stroke: #F59E0B; stroke-width: 2; fill: none; stroke-dasharray: 5 11; animation: fi-dark-dash-amber-f 1.5s linear infinite; }
+    .fi-dark-flow-amber-b { animation-name: fi-dark-dash-amber-b; }
+    .fi-dark-flow-rose { stroke: #F87171; stroke-width: 2; fill: none; stroke-dasharray: 5 11; animation: fi-dark-dash-rose-f 1.5s linear infinite; }
+    .fi-dark-flow-rose-b { animation-name: fi-dark-dash-rose-b; }
+    .fi-dark-packet { animation: fi-dark-ride 1.5s linear infinite; }
+    @keyframes fi-dark-pulse { 0%, 100% { stroke-opacity: 1; } 50% { stroke-opacity: .5; } }
+    @keyframes fi-dark-ride { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+    @keyframes fi-dark-dash-sky-f { to { stroke-dashoffset: -16; } }
+    @keyframes fi-dark-dash-sky-b { to { stroke-dashoffset: 16; } }
+    @keyframes fi-dark-dash-emerald-f { to { stroke-dashoffset: -16; } }
+    @keyframes fi-dark-dash-emerald-b { to { stroke-dashoffset: 16; } }
+    @keyframes fi-dark-dash-amber-f { to { stroke-dashoffset: -16; } }
+    @keyframes fi-dark-dash-amber-b { to { stroke-dashoffset: 16; } }
+    @keyframes fi-dark-dash-rose-f { to { stroke-dashoffset: -16; } }
+    @keyframes fi-dark-dash-rose-b { to { stroke-dashoffset: 16; } }
+    @media (prefers-reduced-motion: reduce) { .fi-dark-flow-sky, .fi-dark-flow-emerald, .fi-dark-flow-amber, .fi-dark-flow-rose { animation: none; } .fi-dark-pulse, .fi-dark-packet { animation: none; } }
+  </style>
+  <rect width="1440" height="800" fill="#0B1118" style="fill:#0B1118 !important"/>
+  <rect width="1440" height="800" fill="url(#fi-dark-dots)" opacity=".5" style="fill:url(#fi-dark-dots) !important"/>
+  <text x="40" y="46" style="font: 600 20px ui-sans-serif, system-ui, sans-serif !important; fill: #E2E8F0 !important" fill="#E2E8F0">DocSage - one contract, two runtimes</text>
+  <text x="40" y="68" style="font: 12px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #64748B !important" fill="#64748B">Agentic RAG over enterprise documents with provider-qualified vector search</text>
+  <rect x="1059.2" y="30" width="340.8" height="26" rx="13" fill="none" stroke="#38BDF8" stroke-opacity=".5" style="fill: none !important; stroke: #38BDF8 !important; stroke-opacity: .5 !important"/>
+  <text x="1229.6000000000001" y="47" text-anchor="middle" style="font: 10px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #38BDF8 !important" fill="#38BDF8">one contract · two runtimes · offline demo mode</text>
+  <path class="fi-dark-edge" d="M285,340 C343,340 343,248 400,248" fill="none" stroke="#1F2B3D" stroke-width="1.5" style="stroke: #1F2B3D !important; fill: none !important; stroke-width: 1.5 !important"/>
+  <path class="fi-dark-flow-sky" d="M285,340 C343,340 343,248 400,248" fill="none" stroke="#38BDF8" stroke-width="2" style="stroke: #38BDF8 !important; fill: none !important; stroke-width: 2 !important; stroke-dasharray: 5 11 !important"/>
+  <text x="343" y="286" text-anchor="middle" style="font: 10px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #38BDF8 !important" fill="#38BDF8">REST + SSE</text>
+  <circle class="fi-dark-packet" r="3.5" fill="#7DD3FC" style="offset-path: path('M285,340 C343,340 343,248 400,248'); fill: #7DD3FC !important"/>
+  <path class="fi-dark-edge" d="M285,440 C343,440 343,510 400,510" fill="none" stroke="#1F2B3D" stroke-width="1.5" style="stroke: #1F2B3D !important; fill: none !important; stroke-width: 1.5 !important"/>
+  <path class="fi-dark-flow-sky" d="M285,440 C343,440 343,510 400,510" fill="none" stroke="#38BDF8" stroke-width="2" style="stroke: #38BDF8 !important; fill: none !important; stroke-width: 2 !important; stroke-dasharray: 5 11 !important"/>
+  <text x="343" y="467" text-anchor="middle" style="font: 10px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #38BDF8 !important" fill="#38BDF8">same contract</text>
+  <circle class="fi-dark-packet" r="3.5" fill="#7DD3FC" style="offset-path: path('M285,440 C343,440 343,510 400,510'); fill: #7DD3FC !important"/>
+  <path class="fi-dark-edge" d="M628,248 C709,248 709,310 790,310" fill="none" stroke="#1F2B3D" stroke-width="1.5" style="stroke: #1F2B3D !important; fill: none !important; stroke-width: 1.5 !important"/>
+  <path class="fi-dark-flow-emerald" d="M628,248 C709,248 709,310 790,310" fill="none" stroke="#34D399" stroke-width="2" style="stroke: #34D399 !important; fill: none !important; stroke-width: 2 !important; stroke-dasharray: 5 11 !important"/>
+  <text x="709" y="271" text-anchor="middle" style="font: 10px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #34D399 !important" fill="#34D399">SQLAlchemy</text>
+  <circle class="fi-dark-packet" r="3.5" fill="#7DD3FC" style="offset-path: path('M628,248 C709,248 709,310 790,310'); fill: #7DD3FC !important"/>
+  <path class="fi-dark-edge" d="M642,510 C716,510 716,428 790,428" fill="none" stroke="#1F2B3D" stroke-width="1.5" style="stroke: #1F2B3D !important; fill: none !important; stroke-width: 1.5 !important"/>
+  <path class="fi-dark-flow-emerald" d="M642,510 C716,510 716,428 790,428" fill="none" stroke="#34D399" stroke-width="2" style="stroke: #34D399 !important; fill: none !important; stroke-width: 2 !important; stroke-dasharray: 5 11 !important"/>
+  <text x="716" y="461" text-anchor="middle" style="font: 10px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #34D399 !important" fill="#34D399">Npgsql</text>
+  <circle class="fi-dark-packet" r="3.5" fill="#7DD3FC" style="offset-path: path('M642,510 C716,510 716,428 790,428'); fill: #7DD3FC !important"/>
+  <path class="fi-dark-edge" d="M628,185 H1160" fill="none" stroke="#1F2B3D" stroke-width="1.5" style="stroke: #1F2B3D !important; fill: none !important; stroke-width: 1.5 !important"/>
+  <path class="fi-dark-flow-amber" d="M628,185 H1160" fill="none" stroke="#F59E0B" stroke-width="2" style="stroke: #F59E0B !important; fill: none !important; stroke-width: 2 !important; stroke-dasharray: 5 11 !important"/>
+  <text x="894" y="177" text-anchor="middle" style="font: 10px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #F59E0B !important" fill="#F59E0B">embed · enrich</text>
+  <circle class="fi-dark-packet" r="3.5" fill="#7DD3FC" style="offset-path: path('M628,185 H1160'); fill: #7DD3FC !important"/>
+  <path class="fi-dark-edge" d="M628,248 C894,248 894,510 1160,510" fill="none" stroke="#1F2B3D" stroke-width="1.5" style="stroke: #1F2B3D !important; fill: none !important; stroke-width: 1.5 !important"/>
+  <path class="fi-dark-flow-amber" d="M628,248 C894,248 894,510 1160,510" fill="none" stroke="#F59E0B" stroke-width="2" style="stroke: #F59E0B !important; fill: none !important; stroke-width: 2 !important; stroke-dasharray: 5 11 !important"/>
+  <text x="894" y="371" text-anchor="middle" style="font: 10px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #F59E0B !important" fill="#F59E0B">embed · answer</text>
+  <circle class="fi-dark-packet" r="3.5" fill="#7DD3FC" style="offset-path: path('M628,248 C894,248 894,510 1160,510'); fill: #7DD3FC !important"/>
+  <path class="fi-dark-edge" d="M642,565 H1160" fill="none" stroke="#1F2B3D" stroke-width="1.5" style="stroke: #1F2B3D !important; fill: none !important; stroke-width: 1.5 !important"/>
+  <path class="fi-dark-flow-amber" d="M642,565 H1160" fill="none" stroke="#F59E0B" stroke-width="2" style="stroke: #F59E0B !important; fill: none !important; stroke-width: 2 !important; stroke-dasharray: 5 11 !important"/>
+  <text x="901" y="557" text-anchor="middle" style="font: 10px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #F59E0B !important" fill="#F59E0B">embed · answer</text>
+  <circle class="fi-dark-packet" r="3.5" fill="#7DD3FC" style="offset-path: path('M642,565 H1160'); fill: #7DD3FC !important"/>
+  <rect class="fi-dark-node fi-dark-pulse" x="50" y="330" width="235" height="120" rx="10" fill="#0E1620" stroke="#22304A" style="fill: #0E1620 !important; stroke: #22304A !important; stroke-width: 1.2 !important"/>
+  <text x="70" y="356" style="font: 600 13px ui-monospace, SFMono-Regular, Menlo, monospace !important; letter-spacing: .5px !important; fill: #E2E8F0 !important" fill="#E2E8F0">Next.js 16 UI</text>
+  <text x="70" y="378" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">Tailwind v4 · light/dark</text>
+  <text x="70" y="396" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">chat · upload · documents</text>
+  <text x="70" y="414" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">admin console · SME reviews</text>
+  <rect class="fi-dark-node" x="400" y="120" width="228" height="138" rx="10" fill="#0E1620" stroke="#22304A" style="fill: #0E1620 !important; stroke: #22304A !important; stroke-width: 1.2 !important"/>
+  <text x="420" y="146" style="font: 600 13px ui-monospace, SFMono-Regular, Menlo, monospace !important; letter-spacing: .5px !important; fill: #E2E8F0 !important" fill="#E2E8F0">FastAPI - reference</text>
+  <text x="420" y="168" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">auth · sessions · roles</text>
+  <text x="420" y="186" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">agentic ingestion pipeline</text>
+  <text x="420" y="204" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">chat SSE · approvals</text>
+  <text x="420" y="222" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">alembic: schema owner</text>
+  <rect class="fi-dark-node" x="400" y="500" width="242" height="138" rx="10" fill="#0E1620" stroke="#22304A" style="fill: #0E1620 !important; stroke: #22304A !important; stroke-width: 1.2 !important"/>
+  <text x="420" y="526" style="font: 600 13px ui-monospace, SFMono-Regular, Menlo, monospace !important; letter-spacing: .5px !important; fill: #E2E8F0 !important" fill="#E2E8F0">ASP.NET Core - parity</text>
+  <text x="420" y="548" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">same /api contract</text>
+  <text x="420" y="566" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">Npgsql · Dapper</text>
+  <text x="420" y="584" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">OpenXML · ClosedXML · PdfPig</text>
+  <text x="420" y="602" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">never migrates</text>
+  <rect class="fi-dark-node" x="790" y="300" width="213" height="138" rx="10" fill="#0E1620" stroke="#22304A" style="fill: #0E1620 !important; stroke: #22304A !important; stroke-width: 1.2 !important"/>
+  <text x="810" y="326" style="font: 600 13px ui-monospace, SFMono-Regular, Menlo, monospace !important; letter-spacing: .5px !important; fill: #E2E8F0 !important" fill="#E2E8F0">PostgreSQL 17 + pgvector</text>
+  <text x="810" y="348" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">chunks vector(1536) HNSW</text>
+  <text x="810" y="366" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">documents · enrichments</text>
+  <text x="810" y="384" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">approvals · chat history</text>
+  <text x="810" y="402" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">sessions (shared auth)</text>
+  <rect class="fi-dark-node" x="1160" y="120" width="235" height="120" rx="10" fill="#0E1620" stroke="#22304A" style="fill: #0E1620 !important; stroke: #22304A !important; stroke-width: 1.2 !important"/>
+  <text x="1180" y="146" style="font: 600 13px ui-monospace, SFMono-Regular, Menlo, monospace !important; letter-spacing: .5px !important; fill: #E2E8F0 !important" fill="#E2E8F0">Google Gemini</text>
+  <text x="1180" y="168" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">Embedding 2 - multimodal</text>
+  <text x="1180" y="186" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">image bytes · text · PDF</text>
+  <text x="1180" y="204" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">flash: captions · summaries</text>
+  <rect class="fi-dark-node" x="1160" y="500" width="264" height="120" rx="10" fill="#0E1620" stroke="#22304A" style="fill: #0E1620 !important; stroke: #22304A !important; stroke-width: 1.2 !important"/>
+  <text x="1180" y="526" style="font: 600 13px ui-monospace, SFMono-Regular, Menlo, monospace !important; letter-spacing: .5px !important; fill: #E2E8F0 !important" fill="#E2E8F0">OpenAI</text>
+  <text x="1180" y="548" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">text-embedding-3-small</text>
+  <text x="1180" y="566" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">gpt-5.6 Responses SSE</text>
+  <text x="1180" y="584" style="font: 11px ui-monospace, SFMono-Regular, Menlo, monospace !important; fill: #94A3B8 !important" fill="#94A3B8">vision captions (fallback path)</text>
+</svg>

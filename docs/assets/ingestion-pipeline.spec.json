@@ -1,0 +1,71 @@
+{
+  "title": "DocSage - agentic ingestion pipeline",
+  "subtitle": "Enrich once at upload; retrieval stays one indexed vector search",
+  "width": 1440,
+  "height": 800,
+  "theme": "dark",
+  "chip": "Gemini embeds image bytes natively · OpenAI via captions",
+  "nodes": [
+    {
+      "id": "upload",
+      "label": "Upload",
+      "lines": ["docx · xlsx · pdf · png/jpeg", "txt · md · csv", "choose provider per doc", "scope: personal | library"],
+      "x": 40,
+      "y": 280,
+      "pulse": true
+    },
+    {
+      "id": "extract",
+      "label": "Extract",
+      "lines": ["text blocks w/ pages", "tables → markdown rows", "images → binary parts", "pdf: pypdf · pdfplumber"],
+      "x": 330,
+      "y": 280
+    },
+    {
+      "id": "enrich",
+      "label": "Enrich - the agent",
+      "lines": ["document summary · keywords", "questions users will ask", "vision captions per image", "table preambles", "artifacts persisted rows"],
+      "x": 620,
+      "y": 280,
+      "pulse": true
+    },
+    {
+      "id": "embed",
+      "label": "Embed",
+      "lines": ["vector(1536) - MRL", "title-prefixed chunk text", "query/doc formats per vendor", "spaces never mix"],
+      "x": 910,
+      "y": 280
+    },
+    {
+      "id": "ready",
+      "label": "Ready",
+      "lines": ["pgvector HNSW", "citations: doc · page · snippet"],
+      "x": 1190,
+      "y": 280,
+      "pulse": true
+    },
+    {
+      "id": "sme",
+      "label": "SME review",
+      "lines": ["topic-designated expert", "approve / reject + note", "audit: append-only approvals"],
+      "x": 700,
+      "y": 560
+    },
+    {
+      "id": "rejected",
+      "label": "Rejected",
+      "lines": ["admin eyes only", "fix · re-upload"],
+      "x": 1060,
+      "y": 620
+    }
+  ],
+  "edges": [
+    { "from": "upload", "to": "extract", "label": "auto-ingest", "color": "sky", "packet": true },
+    { "from": "extract", "to": "enrich", "label": "ordered parts", "color": "sky", "packet": true },
+    { "from": "enrich", "to": "embed", "label": "context-primed", "color": "sky", "packet": true },
+    { "from": "embed", "to": "ready", "label": "indexed", "color": "sky", "packet": true },
+    { "from": "ready", "to": "sme", "label": "library docs → pending_sme", "color": "amber", "packet": true },
+    { "from": "sme", "to": "ready", "label": "approved → agency-wide", "color": "emerald", "packet": true, "direction": "forward" },
+    { "from": "sme", "to": "rejected", "label": "reject", "color": "rose" }
+  ]
+}

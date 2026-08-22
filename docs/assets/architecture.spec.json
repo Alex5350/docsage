@@ -1,0 +1,62 @@
+{
+  "title": "DocSage - one contract, two runtimes",
+  "subtitle": "Agentic RAG over enterprise documents with provider-qualified vector search",
+  "width": 1440,
+  "height": 800,
+  "theme": "dark",
+  "chip": "one contract · two runtimes · offline demo mode",
+  "nodes": [
+    {
+      "id": "browser",
+      "label": "Next.js 16 UI",
+      "lines": ["Tailwind v4 · light/dark", "chat · upload · documents", "admin console · SME reviews"],
+      "x": 50,
+      "y": 330,
+      "pulse": true
+    },
+    {
+      "id": "fastapi",
+      "label": "FastAPI - reference",
+      "lines": ["auth · sessions · roles", "agentic ingestion pipeline", "chat SSE · approvals", "alembic: schema owner"],
+      "x": 400,
+      "y": 120
+    },
+    {
+      "id": "dotnet",
+      "label": "ASP.NET Core - parity",
+      "lines": ["same /api contract", "Npgsql · Dapper", "OpenXML · ClosedXML · PdfPig", "never migrates"],
+      "x": 400,
+      "y": 500
+    },
+    {
+      "id": "pg",
+      "label": "PostgreSQL 17 + pgvector",
+      "lines": ["chunks vector(1536) HNSW", "documents · enrichments", "approvals · chat history", "sessions (shared auth)"],
+      "x": 790,
+      "y": 300
+    },
+    {
+      "id": "gemini",
+      "label": "Google Gemini",
+      "lines": ["Embedding 2 - multimodal", "image bytes · text · PDF", "flash: captions · summaries"],
+      "x": 1160,
+      "y": 120
+    },
+    {
+      "id": "openai",
+      "label": "OpenAI",
+      "lines": ["text-embedding-3-small", "gpt-5.6 Responses SSE", "vision captions (fallback path)"],
+      "x": 1160,
+      "y": 500
+    }
+  ],
+  "edges": [
+    { "from": "browser", "to": "fastapi", "label": "REST + SSE", "color": "sky", "packet": true },
+    { "from": "browser", "to": "dotnet", "label": "same contract", "color": "sky", "packet": true },
+    { "from": "fastapi", "to": "pg", "label": "SQLAlchemy", "color": "emerald", "packet": true },
+    { "from": "dotnet", "to": "pg", "label": "Npgsql", "color": "emerald", "packet": true },
+    { "from": "fastapi", "to": "gemini", "label": "embed · enrich", "color": "amber", "packet": true },
+    { "from": "fastapi", "to": "openai", "label": "embed · answer", "color": "amber", "packet": true },
+    { "from": "dotnet", "to": "openai", "label": "embed · answer", "color": "amber", "packet": true }
+  ]
+}
