@@ -148,8 +148,8 @@ GET  /api/documents/{id}                                      -> 200 {DocumentDe
 DELETE /api/documents/{id}                                    -> 204 (owner or admin)
 
 DocumentSummary: {id,title,source_filename,mime_type,scope,status,status_error,
-                  embedding_provider,topic:{id,name}|null,review_status,chunk_count,
-                  size_bytes,created_at,owner:{id,display_name}?,pending_reviewer:bool}
+                  embedding_provider,embedding_model,topic:{id,name}|null,review_status,
+                  chunk_count,size_bytes,created_at,owner:{id,display_name}?,pending_reviewer:bool}
 DocumentDetail:  Summary + {enrichments:[{kind,content}], approvals:[{reviewer,decision,note,decided_at}]}
 
 GET  /api/topics                       -> {items:[{id,name,description,smes:[{id,display_name,email}]}]}
@@ -186,3 +186,19 @@ GET  /api/admin/overview              -> {users,total_documents,personal_documen
   embeddings. Answer must cite `[n]` matching the citations array order.
 - Demo mode answers are extractive (no LLM): lead sentence + top passage
   excerpts, clearly labeled as demo mode in the UI.
+
+## Appendix: demo embedding algorithm (byte-identical in Python and C#)
+
+Both backends implement EXACTLY this, so demo vectors interoperate:
+
+1. `b = sha256(utf8(text))`; `seed0 = uint64_be(b[0..8])`,
+   `seed1 = uint64_be(b[8..16])`.
+2. Two xorshift64star generators (64-bit unsigned state, overflow wraps):
+   `next(state)`: `state ^= state >> 12`; `state ^= (state << 25)`;
+   `state ^= state >> 27`; return `state * 0x2545F4914F6CDD1D` (mod 2^64).
+   Generator A starts with seed0, B with seed1.
+3. For component `i` in `0..1535`: use generator A when `i` is even, B when
+   odd. `double = (next() >> 11) / 2^53` (53-bit mantissa fraction in [0,1)),
+   `v[i] = double - 0.5`.
+4. L2-normalize `v`, then round each component to 7 decimals with
+   half-away-from-zero semantics: `r = copysign(floor(abs(x)*1e7 + 0.5), x) / 1e7`.
