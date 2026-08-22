@@ -31,3 +31,6 @@ backend/var/
 
 # This repo ships its compose file (some global ignores exclude docker-compose*.yml)
 !docker-compose.yml
+
+# local browser-automation session artifacts
+.playwright-cli/
