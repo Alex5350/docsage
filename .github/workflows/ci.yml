@@ -121,6 +121,9 @@ jobs:
         with:
           python-version: "3.13"
       - run: npm ci
+      - name: install frontend dependencies
+        working-directory: frontend
+        run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test
       - uses: actions/upload-artifact@v4
