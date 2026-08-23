@@ -233,7 +233,9 @@ public sealed class AdminOverviewTests(TestDatabaseFixture fixture) : IAsyncLife
         Assert.True(root.GetProperty("total_documents").GetInt64() >= 1);
         Assert.True(root.GetProperty("personal_documents").GetInt64() >= 1);
         Assert.True(root.GetProperty("pending_reviews").GetInt64() >= 0);
-        Assert.Equal(1, root.GetProperty("pipeline").GetProperty("ready").GetInt64());
+        // presence, not exact count: sibling tests in this collection share the
+        // database and legitimately add ready documents
+        Assert.True(root.GetProperty("pipeline").GetProperty("ready").GetInt64() >= 1);
 
         // non-admin gets 403
         using var plain = _factory.CreateClient();

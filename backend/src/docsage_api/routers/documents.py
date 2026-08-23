@@ -28,7 +28,7 @@ from docsage_api.schemas.shared import (
 )
 from docsage_api.services import storage
 from docsage_api.services.embeddings.base import PROVIDER_NAMES, get_provider, provider_available
-from docsage_api.services.extraction.base import ALLOWED_MIME_TYPES
+from docsage_api.services.extraction.base import ALLOWED_MIME_TYPES, verify_magic_bytes
 from docsage_api.services.ingestion import run_ingestion
 
 router = APIRouter(prefix="/documents", tags=["documents"])
@@ -127,6 +127,12 @@ async def upload_document(
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail="file exceeds the 25MB upload limit",
+        )
+    mismatch = verify_magic_bytes(file.content_type, data)
+    if mismatch is not None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"{mismatch} (declared {file.content_type!r})",
         )
     if not data:
         raise HTTPException(

@@ -26,6 +26,50 @@ public static class DocumentEndpoints
         [".jpeg"] = "image/jpeg",
     };
 
+    /// <summary>Server-side validation mirroring the reference: the declared
+    /// (or extension-derived) mime must be in the allowlist, and the bytes
+    /// must match the family — magic numbers for binaries, UTF-8 for text.</summary>
+    private static readonly byte[] PngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+    private static readonly byte[] JpegSignature = [0xFF, 0xD8, 0xFF];
+    private static readonly System.Text.Encoding StrictUtf8 = System.Text.Encoding.GetEncoding(
+        "utf-8", System.Text.EncoderFallback.ExceptionFallback, System.Text.DecoderFallback.ExceptionFallback);
+
+    public static (string? Error, int Status) VerifyUpload(string mime, byte[] head)
+    {
+        if (!ExtensionMime.ContainsValue(mime))
+        {
+            var allowed = string.Join(", ", ExtensionMime.Values.OrderBy(v => v).Distinct());
+            return ($"unsupported file type '{mime}'; allowed: {allowed}", 422);
+        }
+        var sample = head.AsSpan(0, Math.Min(head.Length, 1024));
+        var (ok, reason) = mime switch
+        {
+            "application/pdf" => (sample.StartsWith("%PDF"u8), "file content is not a PDF"),
+            "image/png" => (sample.StartsWith(PngSignature), "file content is not a PNG image"),
+            "image/jpeg" => (sample.StartsWith(JpegSignature), "file content is not a JPEG image"),
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                or "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                => (sample.StartsWith("PK"u8), "file content is not an Office (OOXML) document"),
+            "text/plain" or "text/markdown" or "text/csv"
+                => (IsValidUtf8(sample), "text upload is not valid UTF-8"),
+            _ => (true, ""),
+        };
+        return ok ? (null, 200) : (reason, 422);
+    }
+
+    private static bool IsValidUtf8(ReadOnlySpan<byte> bytes)
+    {
+        try
+        {
+            _ = StrictUtf8.GetString(bytes);
+            return true;
+        }
+        catch (System.Text.DecoderFallbackException)
+        {
+            return false;
+        }
+    }
+
     public static IEndpointRouteBuilder MapDocumentEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/documents");
@@ -88,6 +132,21 @@ public static class DocumentEndpoints
             var mimeType = !string.IsNullOrWhiteSpace(file.ContentType) && file.ContentType != "application/octet-stream"
                 ? file.ContentType
                 : ExtensionMime.GetValueOrDefault(Path.GetExtension(filename), "application/octet-stream");
+
+            // Server-side validation: allowlist + magic bytes (reference parity).
+            byte[] head;
+            using (var stream = File.OpenRead(absolutePath))
+            {
+                head = new byte[Math.Min(1024, stream.Length)];
+                _ = await stream.ReadAsync(head);
+            }
+            var (uploadError, _) = VerifyUpload(mimeType, head);
+            if (uploadError is not null)
+            {
+                Directory.Delete(Path.GetDirectoryName(absolutePath)!, recursive: true);
+                return ApiError.Validation(uploadError);
+            }
+
 
             var row = await db.QuerySingleAsync<DocumentListRow>(
                 """

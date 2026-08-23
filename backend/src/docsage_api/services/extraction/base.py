@@ -90,3 +90,33 @@ def extract(path: Path, mime: str) -> ExtractionResult:
 
     result.parts = _cap_parts([_cap_content(p) for p in result.parts])
     return result
+
+
+def verify_magic_bytes(declared_mime: str, data: bytes) -> str | None:
+    """Validate that the uploaded bytes plausibly match the declared type.
+
+    The declared mime selects the expected family; magic bytes (or UTF-8
+    decodability for text) verify it. Returns None when consistent, or a
+    human-readable mismatch reason.
+    """
+    head = data[:1024]
+    if declared_mime == "application/pdf":
+        return None if head.startswith(b"%PDF") else "file content is not a PDF"
+    if declared_mime == "image/png":
+        return None if head.startswith(b"\x89PNG\r\n\x1a\n") else "file content is not a PNG image"
+    if declared_mime == "image/jpeg":
+        return None if head.startswith(b"\xff\xd8\xff") else "file content is not a JPEG image"
+    if declared_mime in (
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ):
+        # OOXML containers are ZIP files; the two are disambiguated by the
+        # declared mime and the extractor fails loudly on a wrong guess.
+        return None if head.startswith(b"PK") else "file content is not an Office (OOXML) document"
+    if declared_mime in ("text/plain", "text/markdown", "text/csv"):
+        try:
+            head.decode("utf-8")
+            return None
+        except UnicodeDecodeError:
+            return "text upload is not valid UTF-8"
+    return None  # unknown family: not this helper's call
