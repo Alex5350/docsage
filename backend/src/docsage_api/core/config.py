@@ -28,10 +28,10 @@ class Settings(BaseSettings):
     openai_api_key: str = Field(default="", validation_alias="OPENAI_API_KEY")
     openai_base_url: str = Field(default="", validation_alias="OPENAI_BASE_URL")
 
-    gemini_embedding_model: str = "gemini-embedding-001"
+    gemini_embedding_model: str = "gemini-embedding-2"
     gemini_vision_model: str = "gemini-2.5-flash"
     openai_embedding_model: str = "text-embedding-3-small"
-    openai_chat_model: str = "gpt-5.1"
+    openai_chat_model: str = "gpt-5.6-terra"
 
     @property
     def gemini_enabled(self) -> bool:

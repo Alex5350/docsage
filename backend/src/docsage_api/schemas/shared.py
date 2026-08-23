@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class OwnerRef(BaseModel):
@@ -52,7 +52,7 @@ class EnrichmentOut(BaseModel):
 class ApprovalOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    reviewer: OwnerRef
+    reviewer: str  # reviewer display name (matches the .NET parity DTO)
     decision: str
     note: str
     decided_at: datetime
@@ -95,6 +95,23 @@ class TopicListOut(BaseModel):
 class ReviewDecisionIn(BaseModel):
     decision: str  # "approved" | "rejected" — validated by the router literal
     note: str = ""
+
+
+class TopicCreateIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    description: str = Field(default="", max_length=2_000)
+
+
+class SmeDesignationIn(BaseModel):
+    user_id: uuid.UUID
+
+
+class ChatSessionCreateIn(BaseModel):
+    scope: str = "personal"  # "personal" | "admin" — validated by the router literal
+
+
+class ChatMessageIn(BaseModel):
+    content: str = Field(min_length=1, max_length=8_000)
 
 
 class ChatSessionOut(BaseModel):

@@ -182,8 +182,11 @@ GET  /api/admin/overview              -> {users,total_documents,personal_documen
 - Query embedding MUST match each document's provider space: when the candidate
   set contains multiple providers, embed the query once per provider present
   (max two) and merge results by cosine score.
-- top-k = 6, cosine distance (`<=>`), minimum similarity cutoff 0.15 for demo
-  embeddings. Answer must cite `[n]` matching the citations array order.
+- top-k = 6, cosine distance (`<=>`). A 0.15 similarity floor filters noise
+  for real providers (gemini/openai); demo retrieval is rank-only - demo
+  vectors are deterministic hash noise whose similarities concentrate near
+  zero (max ≈ 0.06 over the seed corpus), so a floor would blank every
+  citation. Answer must cite `[n]` matching the citations array order.
 - Demo mode answers are extractive (no LLM): lead sentence + top passage
   excerpts, clearly labeled as demo mode in the UI.
 
