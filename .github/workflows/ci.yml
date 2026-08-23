@@ -1,0 +1,90 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      pgvector:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: docsage
+          POSTGRES_PASSWORD: docsage
+          POSTGRES_DB: docsage
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U docsage"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DOCSAGE_DATABASE_URL: postgresql+psycopg://docsage:docsage@localhost:5433/docsage
+      DOCSAGE_SESSION_SECRET: ci-secret-not-used-in-prod
+      DOCSAGE_DEMO_MODE: "true"
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+      - run: uv sync --dev
+      - run: uv run ruff check src tests
+      - run: uv run pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+  dotnet:
+    runs-on: ubuntu-latest
+    services:
+      pgvector:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: docsage
+          POSTGRES_PASSWORD: docsage
+          POSTGRES_DB: docsage
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U docsage"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DOCSAGE_DATABASE_URL: postgresql+psycopg://docsage:docsage@localhost:5433/docsage
+      DOCSAGE_SESSION_SECRET: ci-secret-not-used-in-prod
+      DOCSAGE_DEMO_MODE: "true"
+    defaults:
+      run:
+        working-directory: dotnet
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      # schema is owned by the python stack; migrate the ci database first
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+      - run: uv run --project ../backend alembic upgrade head
+      - run: dotnet test
