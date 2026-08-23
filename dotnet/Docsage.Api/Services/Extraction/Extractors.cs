@@ -31,7 +31,11 @@ public interface IPartExtractor
     Task<IReadOnlyList<ExtractedPart>> ExtractAsync(string path, string mimeType, CancellationToken ct = default);
 }
 
-/// <summary>txt / markdown / csv: raw text as a single part.</summary>
+/// <summary>
+/// txt / markdown: raw content as one text part. csv: rows rendered as a
+/// GitHub-style markdown table part — both byte-parity with the reference
+/// extractors (services/extraction/text.py), including pipe escaping.
+/// </summary>
 public sealed class TextExtractor : IPartExtractor
 {
     public bool Supports(string mimeType) => mimeType is "text/plain" or "text/markdown" or "text/csv";
@@ -39,7 +43,30 @@ public sealed class TextExtractor : IPartExtractor
     public async Task<IReadOnlyList<ExtractedPart>> ExtractAsync(string path, string mimeType, CancellationToken ct = default)
     {
         var content = await File.ReadAllTextAsync(path, ct);
-        return string.IsNullOrWhiteSpace(content) ? [] : [new ExtractedPart(PartKinds.Text, content)];
+        if (mimeType != "text/csv")
+            return [new ExtractedPart(PartKinds.Text, content)];
+
+        var rows = content.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(line => line.Split(',').Select(CsvCell).ToList())
+            .Where(cells => cells.Count > 0)
+            .ToList();
+        return [new ExtractedPart(PartKinds.Table, MarkdownTable(rows))];
+    }
+
+    private static string CsvCell(string value) =>
+        value.Trim().Replace("\n", " ").Replace("|", "\\|");
+
+    internal static string MarkdownTable(IReadOnlyList<IReadOnlyList<string>> rows)
+    {
+        if (rows.Count == 0)
+            return "";
+        var lines = new List<string>
+        {
+            $"| {string.Join(" | ", rows[0])} |",
+            $"| {string.Join(" | ", rows[0].Select(_ => "---"))} |",
+        };
+        lines.AddRange(rows.Skip(1).Select(row => $"| {string.Join(" | ", row)} |"));
+        return string.Join("\n", lines);
     }
 }
 

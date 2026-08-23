@@ -31,9 +31,14 @@ We build both, with deliberately different depth:
   the single schema authority. The frontend targets either backend by changing
   `NEXT_PUBLIC_API_BASE_URL`.
 
-The .NET backend is labeled a *parity slice*, not a marketing equal: its
-enrichment pass is deliberately simpler, and that honesty is part of the
-portfolio story.
+The .NET backend is labeled a *parity slice*, not a marketing equal: in real
+provider mode its enrichment pass is deliberately deterministic (summary and
+keywords derived locally rather than by an LLM), and that honesty is part of
+the portfolio story. In demo mode the two stacks are byte-identical by
+design (same summary/keyword derivation, same chunk embedding-text
+composition, same PRNG vectors), so the same document yields the same
+answer on either backend, and the E2E suite proves it by running unchanged
+against both (`E2E_BACKEND=fastapi|dotnet`).
 
 ## Consequences
 

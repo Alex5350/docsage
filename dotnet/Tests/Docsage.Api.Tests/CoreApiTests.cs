@@ -141,7 +141,8 @@ public sealed class DocumentPipelineTests(TestDatabaseFixture fixture) : IAsyncL
             var dimensions = vector.Trim('[', ']').Split(',').Length;
             Assert.Equal(1536, dimensions);
         }
-        Assert.Equal(1, rows[0].ordinal);
+        // reference parity: ordinals are 0-based like the python ingestion pipeline
+        Assert.Equal(0, rows[0].ordinal);
         // extraction produced the document text, not the unsupported-type fallback
         await using var contentCommand = new Npgsql.NpgsqlCommand(
             "SELECT content FROM chunks WHERE document_id = @id ORDER BY ordinal LIMIT 1", db);

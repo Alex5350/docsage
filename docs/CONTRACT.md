@@ -101,7 +101,7 @@ States: `queued -> extracting -> enriching -> embedding -> ready`, or `failed`
    `image_description` (placeholder until enrichment).
 2. **enrich (agentic)** - LLM passes: document summary, keywords, hypothetical
    questions users would ask (stored in `enrichments`); each image part gets a
-   vision caption (stored as an `image_description` chunk - it is always
+   vision caption (stored as an `image_description` chunk; it is always
    embedded as text so every provider can retrieve images); table parts get a
    one-line description prepended. Enrichment model follows the chosen provider
    family (Gemini flash models / OpenAI gpt-5.6-terra). Demo mode:
@@ -138,6 +138,8 @@ POST /api/auth/register  {email,password,display_name}          -> 201 {id,email
      (registration signs the account in immediately - the session cookie is
       set on register exactly as on login; the frontend relies on it)
 POST /api/auth/login     {email,password}                       -> 200 {id,email,display_name,role} + cookie
+     (bad credentials -> 401 {detail:"Invalid credentials"}; wording is pinned -
+      never hint whether the email exists)
 POST /api/auth/logout                                        -> 204
 GET  /api/auth/me                                            -> 200 {id,email,display_name,role} | 401
 

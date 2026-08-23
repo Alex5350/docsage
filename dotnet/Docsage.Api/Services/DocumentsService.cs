@@ -107,7 +107,7 @@ public sealed class DocumentsService(NpgsqlConnection db)
 
     public static DocumentSummaryDto ToSummary(DocumentListRow row) => new(
         row.Id, row.Title, row.SourceFilename, row.MimeType, row.Scope, row.Status, row.StatusError,
-        row.EmbeddingProvider,
+        row.EmbeddingProvider, row.EmbeddingModel,
         row.TopicId is { } topicId && row.TopicName is { } topicName ? new TopicRefDto(topicId, topicName) : null,
         row.ReviewStatus, row.ChunkCount, row.SizeBytes, row.CreatedAt,
         row.OwnerDisplayName is { Length: > 0 } name ? new OwnerDto(row.OwnerId, name) : null,
@@ -115,7 +115,7 @@ public sealed class DocumentsService(NpgsqlConnection db)
 
     public DocumentDetailDto ToDetail(DocumentListRow row, IEnumerable<EnrichmentRow> enrichments, IEnumerable<ApprovalListRow> approvals) => new(
         row.Id, row.Title, row.SourceFilename, row.MimeType, row.Scope, row.Status, row.StatusError,
-        row.EmbeddingProvider,
+        row.EmbeddingProvider, row.EmbeddingModel,
         row.TopicId is { } topicId && row.TopicName is { } topicName ? new TopicRefDto(topicId, topicName) : null,
         row.ReviewStatus, row.ChunkCount, row.SizeBytes, row.CreatedAt,
         row.OwnerDisplayName is { Length: > 0 } name ? new OwnerDto(row.OwnerId, name) : null,

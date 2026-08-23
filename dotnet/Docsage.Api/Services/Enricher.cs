@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Docsage.Api.Infrastructure;
 using Docsage.Api.Services.Extraction;
 
@@ -8,45 +9,72 @@ namespace Docsage.Api.Services;
 
 public sealed record EnrichmentPlan(
     string Summary,
-    string Keywords,
-    string Questions,
-    IReadOnlyList<string> ImageCaptions);
+    IReadOnlyList<string> Keywords,
+    IReadOnlyList<string> Questions,
+    IReadOnlyDictionary<int, string> Captions,
+    IReadOnlyDictionary<int, string> TablePreambles);
 
 /// <summary>
-/// Enrichment stand-ins for the .NET backend, deliberately simpler than the python agent but
-/// storing the same enrichment kinds: summary (first two sentences of the first text part),
-/// keywords (top frequent non-stopwords), one canned question per document, and image captions
-/// via Gemini vision when GEMINI_API_KEY is set (placeholder text otherwise).
+/// Deterministic enrichment for the .NET backend. The demo path is a byte-exact
+/// port of the FastAPI reference (docs/CONTRACT.md, services/enrichment.py):
+/// same summary derivation, same keyword regex and stopword list, same caption
+/// and table-preamble strings — so the same document produces byte-identical
+/// chunk embedding text, and therefore identical demo-provider vectors, on
+/// either backend. Image captions upgrade to Gemini vision when a key is set.
 /// </summary>
-public sealed class Enricher(DocsageOptions options, IHttpClientFactory httpClientFactory)
+public sealed partial class Enricher(DocsageOptions options, IHttpClientFactory httpClientFactory)
 {
+    /// <summary>python STOPOWORDS in enrichment.py — mirrored exactly (parity requirement).</summary>
     private static readonly HashSet<string> Stopwords =
     [
-        "a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "if", "in", "into", "is", "it",
-        "its", "of", "on", "or", "such", "that", "the", "their", "then", "there", "these", "they",
-        "this", "to", "was", "will", "with", "we", "you", "your", "our", "from", "not", "can", "all",
-        "has", "have", "had", "been", "were", "which", "what", "when", "where", "who", "how", "why",
+        "about", "above", "after", "again", "against", "along", "already", "also",
+        "although", "always", "among", "around", "because", "before", "behind",
+        "below", "beside", "between", "beyond", "both", "during", "each", "either",
+        "enough", "every", "except", "following", "further", "having", "here",
+        "herself", "himself", "itself", "just", "least", "less", "maybe", "might",
+        "more", "most", "much", "must", "myself", "never", "other", "others",
+        "ought", "ourselves", "outside", "over", "own", "rather", "really", "same",
+        "shall", "should", "since", "some", "still", "their", "theirs", "them",
+        "themselves", "there", "these", "those", "through", "under", "until",
+        "upon", "what", "whatever", "when", "where", "which", "while", "whose",
+        "within", "without", "would", "yourself",
     ];
 
     public async Task<EnrichmentPlan> GenerateAsync(
         string title, IReadOnlyList<ExtractedPart> parts, CancellationToken ct = default)
     {
-        var textParts = parts.Where(p => p.Kind == PartKinds.Text).Select(p => p.Content).ToList();
-        var summary = FirstSentences(string.Join("\n", textParts), 2);
-        if (summary.Length == 0)
-            summary = title;
-        var keywords = TopKeywords(textParts, 8);
-        var questions = $"What is \"{title}\" about and who should read it?";
+        var texts = parts.Where(p => p.Kind == PartKinds.Text && !string.IsNullOrWhiteSpace(p.Content))
+            .Select(p => p.Content).ToList();
+        var tables = parts.Where(p => p.Kind == PartKinds.Table && !string.IsNullOrWhiteSpace(p.Content))
+            .Select(p => p.Content).ToList();
 
-        var captions = new List<string>();
-        foreach (var image in parts.Where(p => p.Kind == PartKinds.ImageDescription))
+        var summary = texts.Count > 0 ? FirstSentences(texts[0])
+            : tables.Count > 0 ? FirstSentences(tables[0])
+            : title;
+        var keywords = FrequencyKeywords(texts.Concat(tables).ToList());
+        var questions = keywords.Take(3).Select(k => $"What does {title} say about {k}?").ToList();
+
+        var captions = new Dictionary<int, string>();
+        var preambles = new Dictionary<int, string>();
+        for (var i = 0; i < parts.Count; i++)
         {
-            var caption = options.GeminiConfigured && image.ImageBytes is { Length: > 0 }
-                ? await CaptionAsync(image, ct)
-                : null;
-            captions.Add(caption ?? $"Image: {image.ImageName ?? "unnamed"} (caption unavailable without Gemini vision)");
+            if (parts[i].Kind == PartKinds.ImageDescription)
+                captions[i] = $"Image {parts[i].ImageName}: chart or photograph extracted from {title} (demo caption)";
+            else if (parts[i].Kind == PartKinds.Table)
+                preambles[i] = $"Table from {title}.";
         }
-        return new EnrichmentPlan(summary, string.Join(", ", keywords), questions, captions);
+
+        if (options.GeminiConfigured)
+        {
+            for (var i = 0; i < parts.Count; i++)
+            {
+                if (parts[i].Kind == PartKinds.ImageDescription && parts[i].ImageBytes is { Length: > 0 }
+                    && await CaptionAsync(parts[i], ct) is { } caption)
+                    captions[i] = caption;
+            }
+        }
+
+        return new EnrichmentPlan(summary, keywords, questions, captions, preambles);
     }
 
     private async Task<string?> CaptionAsync(ExtractedPart image, CancellationToken ct)
@@ -63,7 +91,7 @@ public sealed class Enricher(DocsageOptions options, IHttpClientFactory httpClie
                     {
                         parts = new object[]
                         {
-                            new { text = "Describe this image in one concise sentence for a document search index." },
+                            new { text = "Describe this image for retrieval in at most two sentences." },
                             new { inline_data = new { mime_type = image.ImageMime ?? "image/png", data = Convert.ToBase64String(image.ImageBytes!) } },
                         },
                     },
@@ -83,38 +111,44 @@ public sealed class Enricher(DocsageOptions options, IHttpClientFactory httpClie
         }
     }
 
-    private static string FirstSentences(string text, int count)
+    // ---------------------------------------------------- reference-parity helpers
+
+    [GeneratedRegex(@"(?<=[.!?])\s+")]
+    private static partial Regex SentenceSplitRegex();
+
+    [GeneratedRegex(@"[A-Za-z][A-Za-z0-9'-]*")]
+    private static partial Regex WordRegex();
+
+    /// <summary>python first_sentences: split after .!? at whitespace, take N, join with spaces.</summary>
+    internal static string FirstSentences(string text)
     {
-        var trimmed = text.ReplaceLineEndings(" ").Trim();
-        if (trimmed.Length == 0)
-            return string.Empty;
-        var found = 0;
-        for (var i = 0; i < trimmed.Length && found < count; i++)
-        {
-            if (trimmed[i] is '.' or '!' or '?')
-            {
-                found++;
-                if (found == count || i + 1 >= trimmed.Length)
-                    return trimmed[..Math.Min(i + 1, trimmed.Length)];
-            }
-        }
-        return trimmed;
+        var sentences = SentenceSplitRegex()
+            .Split(text.Trim())
+            .Select(s => s.Trim())
+            .Where(s => s.Length > 0)
+            .Take(2)
+            .ToList();
+        return string.Join(" ", sentences);
     }
 
-    private static IEnumerable<string> TopKeywords(IReadOnlyList<string> texts, int count)
+    /// <summary>python frequency_keywords: words of 5+ chars minus stopwords, most frequent first,
+    /// ties broken alphabetically (ordinal), top 8.</summary>
+    internal static IReadOnlyList<string> FrequencyKeywords(IReadOnlyList<string> texts)
     {
-        var frequencies = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var text in texts)
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var match in WordRegex().Matches(string.Join("\n", texts).ToLowerInvariant()).Cast<Match>())
         {
-            foreach (var word in text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
-            {
-                var normalized = word.Trim(['.', ',', ';', ':', '!', '?', '"', '\'', '(', ')', '[', ']', '{', '}']).ToLowerInvariant();
-                if (normalized.Length < 4 || Stopwords.Contains(normalized))
-                    continue;
-                frequencies[normalized] = frequencies.TryGetValue(normalized, out var seen) ? seen + 1 : 1;
-            }
+            var word = match.Value;
+            if (word.Length <= 4 || Stopwords.Contains(word))
+                continue;
+            counts[word] = counts.TryGetValue(word, out var seen) ? seen + 1 : 1;
         }
-        return frequencies.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key, StringComparer.Ordinal).Take(count).Select(kv => kv.Key);
+        return counts
+            .OrderByDescending(kv => kv.Value)
+            .ThenBy(kv => kv.Key, StringComparer.Ordinal)
+            .Take(8)
+            .Select(kv => kv.Key)
+            .ToList();
     }
 }
 

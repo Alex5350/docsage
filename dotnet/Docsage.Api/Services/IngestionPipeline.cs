@@ -46,41 +46,39 @@ public sealed class IngestionPipeline(
 
             await SetStatusAsync(db, documentId, "enriching", ct);
             var plan = await enricher.GenerateAsync(doc.Title, parts, ct);
-            // replace image placeholders with their captions, then chunk the enriched parts
-            var captionIndex = 0;
+            // Image parts carry their caption text as chunk content (always
+            // embedded as text so every provider retrieves them); the caption
+            // falls back to the reference placeholder when enrichment has none.
             for (var i = 0; i < parts.Count; i++)
             {
-                if (parts[i].Kind == PartKinds.ImageDescription && captionIndex < plan.ImageCaptions.Count)
-                    parts[i] = parts[i] with { Content = plan.ImageCaptions[captionIndex++] };
+                if (parts[i].Kind != PartKinds.ImageDescription)
+                    continue;
+                var caption = plan.Captions.TryGetValue(i, out var known) ? known
+                    : $"Image {parts[i].ImageName ?? "attachment"} extracted from the document.";
+                parts[i] = parts[i] with { Content = caption };
             }
+            // Enrichment rows mirror the reference persistence: one summary row,
+            // one keywords row when present, one row per hypothetical question.
             await db.ExecuteAsync(
-                """
-                INSERT INTO enrichments (id, document_id, kind, content)
-                VALUES (@Id, @DocumentId, 'summary', @Summary),
-                       (@Id2, @DocumentId, 'keywords', @Keywords),
-                       (@Id3, @DocumentId, 'questions', @Questions)
-                """,
-                new
-                {
-                    Id = Guid.NewGuid(),
-                    Id2 = Guid.NewGuid(),
-                    Id3 = Guid.NewGuid(),
-                    documentId,
-                    plan.Summary,
-                    plan.Keywords,
-                    plan.Questions,
-                });
-            foreach (var caption in plan.ImageCaptions)
-            {
+                "INSERT INTO enrichments (id, document_id, kind, content) VALUES (@Id, @DocumentId, 'summary', @Summary)",
+                new { Id = Guid.NewGuid(), documentId, Summary = plan.Summary });
+            if (plan.Keywords.Count > 0)
                 await db.ExecuteAsync(
-                    "INSERT INTO enrichments (id, document_id, kind, content) VALUES (@Id, @DocumentId, 'caption', @Caption)",
-                    new { Id = Guid.NewGuid(), documentId, Caption = caption });
-            }
-            var chunks = Chunker.Chunk(parts);
+                    "INSERT INTO enrichments (id, document_id, kind, content) VALUES (@Id, @DocumentId, 'keywords', @Keywords)",
+                    new { Id = Guid.NewGuid(), documentId, Keywords = string.Join(", ", plan.Keywords) });
+            foreach (var question in plan.Questions)
+                await db.ExecuteAsync(
+                    "INSERT INTO enrichments (id, document_id, kind, content) VALUES (@Id, @DocumentId, 'questions', @Question)",
+                    new { Id = Guid.NewGuid(), documentId, Question = question });
+            var chunks = Chunker.Chunk(parts, plan.TablePreambles);
 
             await SetStatusAsync(db, documentId, "embedding", ct);
             var provider = providers.Resolve(doc.EmbeddingProvider);
-            var embedTexts = chunks.Select(c => $"Summary: {plan.Summary}\nKeywords: {plan.Keywords}\n\n{c.Content}").ToList();
+            // Reference parity: the demo provider hashes this exact string, so
+            // the same document yields identical vectors on either backend.
+            var summaryHead = plan.Summary.Length <= 120 ? plan.Summary : plan.Summary[..120];
+            var header = $"{doc.Title} | {summaryHead} | keywords: {string.Join(", ", plan.Keywords.Take(6))}";
+            var embedTexts = chunks.Select(c => $"{header}\n{c.Content}").ToList();
             var vectors = await provider.EmbedDocumentsAsync(embedTexts, ct);
             if (vectors.Count != chunks.Count)
                 throw new InvalidOperationException($"embedding provider returned {vectors.Count} vectors for {chunks.Count} chunks");

@@ -55,7 +55,7 @@ public static class AuthEndpoints
                 "SELECT id, email, password_hash, display_name, role, created_at FROM users WHERE email = @email",
                 new { email });
             if (user is null || !hasher.Verify(user.PasswordHash, body.Password ?? ""))
-                return ApiError.Unauthorized("Invalid email or password");
+                return ApiError.Unauthorized("Invalid credentials");
 
             await sessions.StartSessionAsync(user.Id);
             return TypedResults.Ok(new UserDto(user.Id, user.Email, user.DisplayName, user.Role));

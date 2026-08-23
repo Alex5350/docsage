@@ -35,7 +35,13 @@ public static class ChatEndpoints
                 RETURNING id, user_id, scope, title, created_at
                 """,
                 new { Id = Guid.NewGuid(), UserId = user.Id, Scope = scope });
-            var dto = new ChatSessionDto(session.Id, session.Scope, session.Title, session.CreatedAt);
+            var dto = new ChatSessionDto
+            {
+                Id = session.Id,
+                Scope = session.Scope,
+                Title = session.Title,
+                CreatedAt = session.CreatedAt.UtcDateTime,
+            };
             return TypedResults.Created($"/api/chat/sessions/{session.Id}", dto);
         });
 

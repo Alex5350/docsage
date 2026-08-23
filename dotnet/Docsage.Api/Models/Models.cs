@@ -87,6 +87,7 @@ public sealed record DocumentSummaryDto(
     string Status,
     string? StatusError,
     string EmbeddingProvider,
+    string EmbeddingModel,
     TopicRefDto? Topic,
     string ReviewStatus,
     int ChunkCount,
@@ -108,6 +109,7 @@ public sealed record DocumentDetailDto(
     string Status,
     string? StatusError,
     string EmbeddingProvider,
+    string EmbeddingModel,
     TopicRefDto? Topic,
     string ReviewStatus,
     int ChunkCount,
@@ -132,6 +134,15 @@ public sealed record TopicDto(Guid Id, string Name, string Description, IReadOnl
 
 public sealed record SmeDto(Guid Id, string DisplayName, string Email);
 
-public sealed record ChatSessionDto(Guid Id, string Scope, string Title, DateTimeOffset CreatedAt);
+/// <summary>Positional records break Dapper when the DB column (timestamptz →
+/// DateTime) does not match the ctor parameter type (DateTimeOffset), so
+/// chat DTOs use settable properties for materialization.</summary>
+public sealed record ChatSessionDto
+{
+    public Guid Id { get; init; }
+    public string Scope { get; init; } = "";
+    public string Title { get; init; } = "";
+    public DateTime CreatedAt { get; init; }
+}
 
 public sealed record ChatMessageDto(Guid Id, string Role, string Content, System.Text.Json.JsonElement Citations, DateTimeOffset CreatedAt);
