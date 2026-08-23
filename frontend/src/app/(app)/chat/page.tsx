@@ -55,6 +55,11 @@ export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
+  // Cancels the in-flight transcript fetch: a late response for the current
+  // selection would otherwise wipe a first message sent right after the
+  // conversation was created (the server transcript lags the local optimistic
+  // append and the streamed answer).
+  const transcriptAbortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const stickToBottomRef = useRef(true);
 
@@ -90,18 +95,25 @@ export default function ChatPage() {
   useEffect(() => {
     if (!activeId) return;
     let cancelled = false;
-    listChatMessages(activeId)
+    transcriptAbortRef.current?.abort();
+    const controller = new AbortController();
+    transcriptAbortRef.current = controller;
+    listChatMessages(activeId, controller.signal)
       .then((items) => {
         if (!cancelled) setMessages(items);
       })
       .catch((err) => {
-        if (!cancelled) toast.error("Conversation unavailable", { description: describeError(err) });
+        const aborted = err instanceof DOMException && err.name === "AbortError";
+        if (!cancelled && !aborted) {
+          toast.error("Conversation unavailable", { description: describeError(err) });
+        }
       })
       .finally(() => {
         if (!cancelled) setMessagesLoading(false);
       });
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [activeId, selectionNonce]);
 
@@ -144,6 +156,7 @@ export default function ChatPage() {
         }
       }
       const sid = sessionId;
+      transcriptAbortRef.current?.abort();
 
       setMessages((prev) => [
         ...prev,

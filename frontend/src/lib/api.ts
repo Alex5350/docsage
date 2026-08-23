@@ -184,8 +184,10 @@ export async function listChatSessions(): Promise<ChatSession[]> {
   return data.items;
 }
 
-export async function listChatMessages(sessionId: string): Promise<ChatMessage[]> {
-  const data = await requestJson<{ items: ChatMessage[] }>(`/chat/sessions/${sessionId}/messages`);
+export async function listChatMessages(sessionId: string, signal?: AbortSignal): Promise<ChatMessage[]> {
+  const data = await requestJson<{ items: ChatMessage[] }>(`/chat/sessions/${sessionId}/messages`, {
+    signal,
+  });
   return data.items;
 }
 
