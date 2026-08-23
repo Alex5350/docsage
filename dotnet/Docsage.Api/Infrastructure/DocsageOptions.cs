@@ -15,11 +15,11 @@ public sealed class DocsageOptions
     public string Environment { get; set; } = "development";
     public bool? DemoMode { get; set; }
     public string? GeminiApiKey { get; set; }
-    public string GeminiEmbeddingModel { get; set; } = "gemini-embedding-001";
+    public string GeminiEmbeddingModel { get; set; } = "gemini-embedding-2";
     public string GeminiVisionModel { get; set; } = "gemini-2.5-flash";
     public string? OpenAiApiKey { get; set; }
     public string OpenAiEmbeddingModel { get; set; } = "text-embedding-3-small";
-    public string OpenAiChatModel { get; set; } = "gpt-5.1";
+    public string OpenAiChatModel { get; set; } = "gpt-5.6-terra";
     public string? OpenAiBaseUrl { get; set; }
     public string? UploadsDir { get; set; }
 
@@ -83,11 +83,11 @@ public static class DocsageOptionsExtensions
                 SessionSecret = Get("DOCSAGE_SESSION_SECRET", "Docsage:SessionSecret") ?? "dev-only-insecure-secret",
                 Environment = Get("DOCSAGE_ENV", "Docsage:Environment") ?? (env.IsProduction() ? "production" : "development"),
                 GeminiApiKey = Get("GEMINI_API_KEY", "Docsage:GeminiApiKey"),
-                GeminiEmbeddingModel = Get("DOCSAGE_GEMINI_EMBEDDING_MODEL", "Docsage:GeminiEmbeddingModel") ?? "gemini-embedding-001",
+                GeminiEmbeddingModel = Get("DOCSAGE_GEMINI_EMBEDDING_MODEL", "Docsage:GeminiEmbeddingModel") ?? "gemini-embedding-2",
                 GeminiVisionModel = Get("DOCSAGE_GEMINI_VISION_MODEL", "Docsage:GeminiVisionModel") ?? "gemini-2.5-flash",
                 OpenAiApiKey = Get("OPENAI_API_KEY", "Docsage:OpenAiApiKey"),
                 OpenAiEmbeddingModel = Get("DOCSAGE_OPENAI_EMBEDDING_MODEL", "Docsage:OpenAiEmbeddingModel") ?? "text-embedding-3-small",
-                OpenAiChatModel = Get("DOCSAGE_OPENAI_CHAT_MODEL", "Docsage:OpenAiChatModel") ?? "gpt-5.1",
+                OpenAiChatModel = Get("DOCSAGE_OPENAI_CHAT_MODEL", "Docsage:OpenAiChatModel") ?? "gpt-5.6-terra",
                 OpenAiBaseUrl = Get("OPENAI_BASE_URL", "Docsage:OpenAiBaseUrl"),
                 UploadsDir = Get("DOCSAGE_UPLOAD_DIR", "Docsage:UploadsDir"),
             };

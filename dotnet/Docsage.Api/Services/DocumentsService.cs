@@ -17,6 +17,7 @@ public sealed record DocumentListRow
     public string Status { get; init; } = "";
     public string? StatusError { get; init; }
     public string EmbeddingProvider { get; init; } = "";
+    public string EmbeddingModel { get; init; } = "";
     public Guid? TopicId { get; init; }
     public string? TopicName { get; init; }
     public string ReviewStatus { get; init; } = "";
@@ -48,7 +49,7 @@ public sealed class DocumentsService(NpgsqlConnection db)
 {
     private const string SelectBase = """
         SELECT d.id, d.owner_id, d.scope, d.title, d.source_filename, d.mime_type, d.status,
-               d.status_error, d.embedding_provider, d.topic_id, t.name AS topic_name,
+               d.status_error, d.embedding_provider, d.embedding_model, d.topic_id, t.name AS topic_name,
                d.review_status, d.chunk_count, d.size_bytes, d.created_at,
                u.display_name AS owner_display_name,
                (d.review_status = 'pending_sme' AND (@IsAdmin OR EXISTS (

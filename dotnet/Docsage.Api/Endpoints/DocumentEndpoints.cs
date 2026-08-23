@@ -1,6 +1,7 @@
 using Dapper;
 using Docsage.Api.Infrastructure;
 using Docsage.Api.Models;
+using Docsage.Api.Providers;
 using Docsage.Api.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -42,7 +43,7 @@ public static class DocumentEndpoints
         });
 
         group.MapPost("/", async (HttpRequest request, ISessionService sessions, DocumentsService documents,
-            UploadStorage storage, IngestionPipeline pipeline, NpgsqlConnection db) =>
+            UploadStorage storage, IngestionPipeline pipeline, EmbeddingProviderResolver resolver, NpgsqlConnection db) =>
         {
             if (await sessions.ResolveUserAsync() is not { } user)
                 return ApiError.Unauthorized();
@@ -91,11 +92,11 @@ public static class DocumentEndpoints
             var row = await db.QuerySingleAsync<DocumentListRow>(
                 """
                 INSERT INTO documents (id, owner_id, scope, title, source_filename, mime_type, storage_path,
-                                       size_bytes, checksum_sha256, status, embedding_provider, topic_id)
+                                       size_bytes, checksum_sha256, status, embedding_provider, embedding_model, topic_id)
                 VALUES (@Id, @OwnerId, @Scope, @Title, @SourceFilename, @MimeType, @StoragePath,
-                        @SizeBytes, @ChecksumSha256, 'queued', @EmbeddingProvider, @TopicId)
+                        @SizeBytes, @ChecksumSha256, 'queued', @EmbeddingProvider, @EmbeddingModel, @TopicId)
                 RETURNING id, owner_id, scope, title, source_filename, mime_type, status, status_error,
-                          embedding_provider, topic_id, NULL AS topic_name, review_status, chunk_count,
+                          embedding_provider, embedding_model, topic_id, NULL AS topic_name, review_status, chunk_count,
                           size_bytes, created_at, @OwnerDisplayName AS owner_display_name, FALSE AS pending_reviewer
                 """,
                 new
@@ -110,6 +111,7 @@ public static class DocumentEndpoints
                     SizeBytes = (long)file.Length,
                     ChecksumSha256 = Sha256.HexOfFile(absolutePath),
                     EmbeddingProvider = provider,
+                    EmbeddingModel = resolver.Resolve(provider).ModelId,
                     TopicId = topicId,
                     OwnerDisplayName = user.DisplayName,
                 });

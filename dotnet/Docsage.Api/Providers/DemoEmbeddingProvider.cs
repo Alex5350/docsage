@@ -25,6 +25,7 @@ public sealed class DemoEmbeddingProvider : IEmbeddingProvider
     private const double FractionScale = 1.0 / (1L << 53); // exactly 2^-53
 
     public string Name => "demo";
+    public string ModelId => "demo-v1";
 
     public Task<double[]> EmbedQueryAsync(string text, CancellationToken ct = default) =>
         Task.FromResult(ComputeVector(text));

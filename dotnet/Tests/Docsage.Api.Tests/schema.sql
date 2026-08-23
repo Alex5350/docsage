@@ -53,6 +53,7 @@ CREATE TABLE documents (
     status_error text,
     embedding_provider text NOT NULL
         CHECK (embedding_provider IN ('gemini','openai','demo')),
+    embedding_model text NOT NULL DEFAULT '',
     topic_id uuid REFERENCES topics(id),
     review_status text NOT NULL DEFAULT 'not_required'
         CHECK (review_status IN ('not_required','pending_sme','approved','rejected')),

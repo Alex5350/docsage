@@ -9,6 +9,9 @@ public interface IEmbeddingProvider
 {
     string Name { get; }
 
+    /// <summary>Exact model id recorded on documents.embedding_model (contract).</summary>
+    string ModelId { get; }
+
     Task<double[]> EmbedQueryAsync(string text, CancellationToken ct = default);
 
     Task<IReadOnlyList<double[]>> EmbedDocumentsAsync(IReadOnlyList<string> texts, CancellationToken ct = default);

@@ -17,6 +17,7 @@ public sealed class GeminiEmbeddingProvider(DocsageOptions options, HttpClient h
     private string Key => options.GeminiApiKey ?? throw new InvalidOperationException("GEMINI_API_KEY not configured");
 
     public string Name => "gemini";
+    public string ModelId => options.GeminiEmbeddingModel;
 
     public async Task<double[]> EmbedQueryAsync(string text, CancellationToken ct = default)
     {

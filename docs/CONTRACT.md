@@ -134,7 +134,9 @@ conflict, 422 validation).
 GET  /api/health                          -> {status:"ok", database:"up"|"down",
                                              demo_mode:bool, providers:{gemini:bool, openai:bool}}
 
-POST /api/auth/register  {email,password,display_name}          -> 201 {id,email,display_name,role}
+POST /api/auth/register  {email,password,display_name}          -> 201 {id,email,display_name,role} + cookie
+     (registration signs the account in immediately - the session cookie is
+      set on register exactly as on login; the frontend relies on it)
 POST /api/auth/login     {email,password}                       -> 200 {id,email,display_name,role} + cookie
 POST /api/auth/logout                                        -> 204
 GET  /api/auth/me                                            -> 200 {id,email,display_name,role} | 401

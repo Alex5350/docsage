@@ -17,7 +17,7 @@ public static class AuthEndpoints
     {
         var group = app.MapGroup("/api/auth");
 
-        group.MapPost("/register", async (RegisterRequest body, NpgsqlConnection db, IPasswordHasher hasher) =>
+        group.MapPost("/register", async (RegisterRequest body, NpgsqlConnection db, IPasswordHasher hasher, ISessionService sessions) =>
         {
             var email = body.Email?.Trim().ToLowerInvariant() ?? "";
             if (!email.Contains('@') || email.Length < 3)
@@ -36,6 +36,10 @@ public static class AuthEndpoints
                     RETURNING id, email, password_hash, display_name, role, created_at
                     """,
                     new { Id = Guid.NewGuid(), Email = email, PasswordHash = hasher.Hash(body.Password), DisplayName = body.DisplayName.Trim() });
+                // Registration signs the new account in immediately - the
+                // contract (and the FastAPI reference) set the session cookie
+                // here, and the frontend lands the user straight into the app.
+                await sessions.StartSessionAsync(user.Id);
                 return TypedResults.Created($"/api/auth/me", new UserDto(user.Id, user.Email, user.DisplayName, user.Role));
             }
             catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UniqueViolation)

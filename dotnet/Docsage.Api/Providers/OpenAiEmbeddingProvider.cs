@@ -17,6 +17,7 @@ public sealed class OpenAiEmbeddingProvider(DocsageOptions options, HttpClient h
     private string BaseUrl => (options.OpenAiBaseUrl is { Length: > 0 } b ? b.TrimEnd('/') : "https://api.openai.com");
 
     public string Name => "openai";
+    public string ModelId => options.OpenAiEmbeddingModel;
 
     public async Task<double[]> EmbedQueryAsync(string text, CancellationToken ct = default)
     {
