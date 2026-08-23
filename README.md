@@ -125,11 +125,14 @@ The E2E suite drives the real UI through every feature - multi-format uploads
 (DOCX/XLSX/PDF/PNG/JPG/TXT/MD/CSV from a generated fictional-agency corpus,
 plus rejection cases), the agentic pipeline, citations, SME approvals, admin
 cross-search - against an isolated database your dev data never touches.
-Headed and interactive modes: `npm run test:headed`, `test:ui`, `test:debug`.
-See **[e2e/README.md](e2e/README.md)** for the full guide, including how to
-add your own tests.
+The same tests run against **both** backends (`npm run test:dotnet`), making
+the FastAPI/ASP.NET Core contract parity executable. Headed and interactive
+modes: `npm run test:headed`, `test:ui`, `test:debug`. See
+**[e2e/README.md](e2e/README.md)** for the full guide, including how to add
+your own tests, and [docs/onboarding.md §4](docs/onboarding.md) for switching
+the app between the two APIs.
 
-CI runs all four suites against a pgvector service container on every push.
+CI runs all suites against a pgvector service container on every push.
 
 ---
 

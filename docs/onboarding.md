@@ -65,20 +65,55 @@ Open http://localhost:3000, sign in as `riley@docsage.dev`, and ask the
 seeded conversation *"How many remote days are allowed per week?"* - you
 should get a demo-mode extractive answer citing the Telework policy.
 
-## 4. The .NET parity API (optional)
+## 4. Switching between the FastAPI and ASP.NET Core backends
 
-Same database, same contract, different runtime (ADR 0001):
+Two APIs, one contract, one database (ADR 0001). The frontend talks to
+whichever one you point it at - same login, same documents, same chat,
+because sessions, password hashes, and demo embedding vectors are
+interoperable across runtimes (ADR 0007).
+
+**The switch is one environment variable** - the frontend reads
+`NEXT_PUBLIC_API_BASE_URL` when its dev server starts:
+
+| Backend | Default port | Start it |
+|---|---|---|
+| FastAPI (reference) | 8000 | `cd backend && uv run uvicorn docsage_api.main:app --port 8000 --reload` |
+| ASP.NET Core (parity) | 8001 | `cd dotnet && DOCSAGE_DATABASE_URL=postgresql+psycopg://docsage:docsage@localhost:5433/docsage dotnet run --project Docsage.Api --urls http://localhost:8001` |
 
 ```bash
-cd dotnet
-dotnet test                          # integration tests spin up against 5433
-DOCSAGE_DATABASE_URL=postgresql+psycopg://docsage:docsage@localhost:5433/docsage \
-dotnet run --project Docsage.Api --urls http://localhost:8001
+# Frontend pointed at FastAPI (the default):
+cd frontend && npm run dev -- --port 3000
+
+# Frontend pointed at the .NET API instead:
+cd frontend && NEXT_PUBLIC_API_BASE_URL=http://localhost:8001 npm run dev -- --port 3000
 ```
 
-Point the frontend at it by changing `NEXT_PUBLIC_API_BASE_URL` to
-`http://localhost:8001`. Sessions, password hashes, and demo embedding
-vectors are interoperable across both backends (ADR 0007).
+**You can run both at once** (they are separate ports) and keep two browser
+tabs side by side - the same user is logged in on both, the same documents
+appear in both, and a chat answer streamed from FastAPI is visible in the
+history when you reload against .NET. Stop the frontend, flip the variable,
+restart - nothing else changes. For a production build, set the variable at
+build time (`NEXT_PUBLIC_API_BASE_URL=... npm run build`) since it is
+inlined into the bundle.
+
+**What to expect when switching** - identical behavior for every user-facing
+flow (that is what the E2E suite proves by running the same 31 tests against
+each backend), with two deliberate depth differences: the .NET enrichment
+pass is simpler (deterministic stand-ins shaped like the Python artifacts),
+and its Gemini image-embedding path routes through captions rather than
+native pixel embeddings. Both are documented in ADR 0001 and neither is
+observable in demo mode.
+
+**E2E against either backend:**
+
+```bash
+cd e2e
+npx playwright test                 # FastAPI (default)
+npm run test:dotnet                 # identical 31 tests against ASP.NET Core
+```
+
+CI runs both. See [e2e/README.md](../e2e/README.md) for what that proves
+about contract parity.
 
 ## 5. Tests
 
