@@ -32,7 +32,7 @@ from docsage_api.services.answer import AnswerService
 from docsage_api.services.ingestion import run_ingestion
 from docsage_api.services.retrieval import retrieve
 
-SEED_CORPUS = Path("/Users/alex/portfolio/docsage/db/seed-corpus")
+SEED_CORPUS = Path(__file__).resolve().parents[3] / "db" / "seed-corpus"
 DEMO_PASSWORD = "docsage-demo"
 
 # Children-first so a single TRUNCATE respects FK dependency order.
