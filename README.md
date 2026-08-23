@@ -118,9 +118,18 @@ scripts/    dev.sh - one command, three processes
 cd backend  && uv run pytest -q    # 23 integration tests (real pgvector)
 cd dotnet   && dotnet test         # 21 tests incl. cross-runtime vector parity
 cd frontend && npm run lint && npm run build
+cd e2e      && npx playwright test # 31 user-journey tests, one command, boots everything
 ```
 
-CI runs all three jobs against a pgvector service container on every push.
+The E2E suite drives the real UI through every feature - multi-format uploads
+(DOCX/XLSX/PDF/PNG/JPG/TXT/MD/CSV from a generated fictional-agency corpus,
+plus rejection cases), the agentic pipeline, citations, SME approvals, admin
+cross-search - against an isolated database your dev data never touches.
+Headed and interactive modes: `npm run test:headed`, `test:ui`, `test:debug`.
+See **[e2e/README.md](e2e/README.md)** for the full guide, including how to
+add your own tests.
+
+CI runs all four suites against a pgvector service container on every push.
 
 ---
 

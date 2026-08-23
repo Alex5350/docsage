@@ -86,7 +86,15 @@ vectors are interoperable across both backends (ADR 0007).
 cd backend && uv run pytest -q       # integration tests against the docker db
 cd dotnet  && dotnet test            # parity-slice integration tests
 cd frontend && npm run lint && npm run build
+cd e2e     && npx playwright test    # user-journey tests (boots their own stack)
 ```
+
+The E2E suite needs `docker compose up -d db` and nothing else - it creates
+its own `docsage_e2e` database, starts the backend on :8100 and the frontend
+on :3000, generates a fictional fixture corpus, and runs headless. Watch it
+drive the browser with `npm run test:headed` from `e2e/`, or step through
+failures with `npm run test:debug`. The full guide - including how to write
+your own tests - is **[e2e/README.md](../e2e/README.md)**.
 
 The Python suite creates and destroys its own `docsage_test` database per
 run - it never touches your dev data.
