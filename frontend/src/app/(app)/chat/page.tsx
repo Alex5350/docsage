@@ -44,6 +44,9 @@ export default function ChatPage() {
   const [sessionsError, setSessionsError] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Bumped on every selection so re-selecting the active conversation still
+  // refetches its transcript (the effect key can't be activeId alone).
+  const [selectionNonce, setSelectionNonce] = useState(0);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [streaming, setStreaming] = useState(false);
@@ -100,7 +103,7 @@ export default function ChatPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeId]);
+  }, [activeId, selectionNonce]);
 
   // Abort any in-flight stream when leaving the page.
   useEffect(() => () => abortRef.current?.abort(), []);
@@ -252,6 +255,7 @@ export default function ChatPage() {
     setMessagesLoading(true);
     stickToBottomRef.current = true;
     setActiveId(id);
+    setSelectionNonce((nonce) => nonce + 1);
     setSidebarOpen(false);
   }
 
