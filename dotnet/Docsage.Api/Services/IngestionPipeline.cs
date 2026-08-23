@@ -83,6 +83,10 @@ public sealed class IngestionPipeline(
             if (vectors.Count != chunks.Count)
                 throw new InvalidOperationException($"embedding provider returned {vectors.Count} vectors for {chunks.Count} chunks");
 
+            // Chunks and the terminal ready status commit atomically (the
+            // reference pipeline is single-commit): a mid-loop failure must
+            // not leave partial chunks under a failed document.
+            await using var transaction = await db.BeginTransactionAsync(ct);
             foreach (var (chunk, vector) in chunks.Zip(vectors))
             {
                 await db.ExecuteAsync(
@@ -100,7 +104,7 @@ public sealed class IngestionPipeline(
                         chunk.Page,
                         chunk.TokenCount,
                         Embedding = vector.ToPgVector(),
-                    });
+                    }, transaction);
             }
 
             var pageCount = parts.Select(p => p.Page).Where(p => p is not null).DefaultIfEmpty(0).Max();
@@ -112,7 +116,9 @@ public sealed class IngestionPipeline(
                     updated_at = now()
                 WHERE id = @documentId
                 """,
-                new { ChunkCount = chunks.Count, PageCount = pageCount == 0 ? (int?)null : pageCount, documentId });
+                new { ChunkCount = chunks.Count, PageCount = pageCount == 0 ? (int?)null : pageCount, documentId },
+                transaction);
+            await transaction.CommitAsync(ct);
             logger.LogInformation("Document {DocumentId} ready with {ChunkCount} chunks", documentId, chunks.Count);
         }
         catch (Exception ex)

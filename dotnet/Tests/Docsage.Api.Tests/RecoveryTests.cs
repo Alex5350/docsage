@@ -88,8 +88,8 @@ public sealed class RecoveryTests(TestDatabaseFixture fixture) : IAsyncLifetime
         return id;
     }
 
-    private static Task<string> StatusOfAsync(NpgsqlConnection db, Guid id) =>
-        db.ExecuteScalarAsync<string>("SELECT status FROM documents WHERE id = @id", new { id })
+    private static async Task<string> StatusOfAsync(NpgsqlConnection db, Guid id) =>
+        await db.ExecuteScalarAsync<string>("SELECT status FROM documents WHERE id = @id", new { id })
         ?? throw new InvalidOperationException("row missing");
 
     private static Task<string?> ErrorOfAsync(NpgsqlConnection db, Guid id) =>
