@@ -33,7 +33,7 @@ noise.
   second provider actually exists in scope).
 - Re-embedding a document under a different provider requires a migration
   command, not a flag flip; that is intentionally out of scope for v1 and
-  documented in `docs/limitations.md` mindset.
+  recorded, with the other extension paths, in `docs/limitations.md`.
 - The demo provider follows the same rule - it is a third, deterministic space
   (see ADR 0006), which is exactly why query embedding must route by stored
   provider rather than by current configuration.

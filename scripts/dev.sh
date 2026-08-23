@@ -19,6 +19,7 @@ echo ">> backend on :8000"
 (cd backend && uv run uvicorn docsage_api.main:app --port 8000 --reload) &
 BACKEND=$!
 
+echo ">> (dotnet parity API is not started here — see docs/onboarding.md §4 to run it on :8001)"
 echo ">> frontend on :3000"
 (cd frontend && npm run dev -- --port 3000) &
 FRONTEND=$!

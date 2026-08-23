@@ -79,6 +79,9 @@ cd backend && uv sync && cp ../.env.example .env \
 cd ../frontend && npm install && cp .env.local.example .env.local && npm run dev -- --port 3000
 ```
 
+The API exposes a live OpenAPI explorer at http://localhost:8000/docs
+(Swagger UI) generated from the same models that power the endpoints.
+
 Open http://localhost:3000 and sign in as `riley@docsage.dev` /
 `docsage-demo` (also `admin@`, `morgan@`, `casey@` - see
 [docs/onboarding.md](docs/onboarding.md) for what each account demonstrates).
@@ -136,4 +139,4 @@ CI runs all suites against a pgvector service container on every push.
 
 ---
 
-*DocSage is a portfolio project by Alex Torres.*
+*DocSage is a portfolio project by Alex Torres - MIT licensed (see [LICENSE](LICENSE)).*
