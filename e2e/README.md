@@ -23,7 +23,7 @@ npx playwright test
 | `admin.spec.ts` | Admin surface | `/admin` renders stat cards + pipeline distribution; "Admin cross-search" opens an admin-scope session (badge "Admin · all documents") whose answer cites the admin's personal drill log; non-admins get no Admin nav and an "Admins only" panel. |
 | `theming-navigation.spec.ts` | Chrome & theming | Landing hero + CTA to `/login`; theme toggle flips `dark`↔`light` on `<html>` and persists via localStorage across reload; the demo-mode banner shows on app pages. |
 
-Thirty-one tests total, run serially (`workers: 1`) because the features under test
+Thirty-six tests total, run serially (`workers: 1`) because the features under test
 share one database story (uploads accumulate, reviews gate library visibility).
 
 ## Prerequisites

@@ -16,13 +16,13 @@ hierarchy gates what becomes agency-wide truth.
 
 - **Agentic ingestion, not chunk-and-forget.** At upload, model passes write a
   summary, keywords, *the questions users will actually ask*, table preambles,
-  and vision captions for images - persisted as data, so retrieval at question
+  and vision captions for images, persisted as data, so retrieval at question
   time stays a single indexed vector search. The vocabulary gap between
   "maximum three remote days" and "can I work from home four days a week" is
   closed at ingestion, once per document.
 - **Dual embedding providers, chosen per document.** Google
-  **Gemini Embedding 2** - natively multimodal, so PNG/JPEG chunks embed
-  straight from pixels - or **OpenAI text-embedding-3-small**, where images
+  **Gemini Embedding 2** (natively multimodal, so PNG/JPEG chunks embed
+  straight from pixels) or **OpenAI text-embedding-3-small**, where images
   enter the index through generated captions. Both store into one
   `vector(1536)` pgvector column; vector spaces are provider-qualified so a
   mixed corpus never compares incompatible geometries.
@@ -33,11 +33,11 @@ hierarchy gates what becomes agency-wide truth.
   searches across every user - and says so on the screen.
 - **One contract, two runtimes.** A FastAPI reference implementation and an
   ASP.NET Core parity implementation serve the identical REST contract
-  against the same database - shared argon2id password hashes, shared
+  against the same database: shared argon2id password hashes, shared
   sessions, even a byte-identical deterministic demo embedding algorithm.
 - **Runs with zero API keys.** A deterministic offline demo provider (hash-
-  seeded PRNG vectors, identical in Python and C#) drives the whole product -
-  pipeline, approvals, citations - so a reviewer can clone and chat in
+  seeded PRNG vectors, identical in Python and C#) drives the whole product
+  (pipeline, approvals, citations), so a reviewer can clone and chat in
   minutes.
 
 ## Screenshots
@@ -118,10 +118,11 @@ scripts/    dev.sh - one command, three processes
 ## Testing
 
 ```bash
-cd backend  && uv run pytest -q    # 23 integration tests (real pgvector)
-cd dotnet   && dotnet test         # 21 tests incl. cross-runtime vector parity
+cd backend  && uv run pytest -q     # 42 integration tests (real pgvector, extraction goldens)
+cd dotnet   && dotnet test          # 32 tests incl. cross-runtime vector parity
+cd frontend && npm run test:unit    # 10 vitest unit tests (SSE parser, formatters)
 cd frontend && npm run lint && npm run build
-cd e2e      && npx playwright test # 31 user-journey tests, one command, boots everything
+cd e2e      && npx playwright test  # 36 user-journey tests, one command, boots everything
 ```
 
 The E2E suite drives the real UI through every feature - multi-format uploads

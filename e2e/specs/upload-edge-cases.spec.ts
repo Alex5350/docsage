@@ -42,18 +42,18 @@ test.describe("upload + streaming edge cases", () => {
     await composer.fill("What are the technical requirements for telework and remote access?");
     await composer.press("Enter");
 
-    // Demo answers stream in about a second — the stop control may complete
-    // before this test can engage it. When it does, verify the stop path;
-    // otherwise the premise is untestable in demo mode and the run skips
-    // honestly rather than flaking.
+    // Demo answers stream in about a second — the stop control can complete
+    // (and unmount mid-teardown) before this test can engage it. When the
+    // click lands, verify the stop path; otherwise the premise is untestable
+    // in demo mode and the run skips honestly rather than flaking.
     const stop = page.getByRole("button", { name: "Stop generating" });
+    await stop.waitFor({ state: "visible", timeout: 3_000 }).catch(() => {});
     const engaged = await stop
-      .waitFor({ state: "visible", timeout: 3_000 })
+      .click({ timeout: 2_000 })
       .then(() => true)
       .catch(() => false);
     test.skip(!engaged, "demo stream completed before Stop could engage");
 
-    await stop.click();
     await expect(stop).toBeHidden();
 
     // Whatever streamed before the stop stays visible, and the composer works again.

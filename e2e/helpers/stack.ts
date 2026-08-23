@@ -53,7 +53,8 @@ export async function registerViaUi(
   await page.getByRole("textbox", { name: "Email" }).fill(email);
   await page.getByRole("textbox", { name: "Password" }).fill(password);
   await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page).toHaveURL(/\/chat$/, { timeout: 15_000 });
+  // Generous budget: under full-suite load the first-submit compile can outlast 15s
+  await expect(page).toHaveURL(/\/chat$/, { timeout: 30_000 });
 }
 
 /** Sign in through the /login form and land on /chat. */
@@ -66,7 +67,8 @@ export async function loginViaUi(
   await page.getByRole("textbox", { name: "Email" }).fill(email);
   await page.getByRole("textbox", { name: "Password" }).fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/chat$/, { timeout: 15_000 });
+  // Generous budget: under full-suite load the first-submit compile can outlast 15s
+  await expect(page).toHaveURL(/\/chat$/, { timeout: 30_000 });
 }
 
 /** Sign out through the user menu and land back on /login. */
