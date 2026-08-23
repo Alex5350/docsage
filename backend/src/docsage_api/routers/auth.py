@@ -2,11 +2,16 @@
 
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from docsage_api.core.config import Settings, get_settings
+from docsage_api.core.rate_limit import (
+    REGISTER_LIMIT,
+    client_ip,
+    limiter,
+)
 from docsage_api.core.security import hash_password, new_session_token, verify_password
 from docsage_api.db.models import Session as DbSession
 from docsage_api.db.models import User
@@ -35,10 +40,21 @@ def _set_session_cookie(response: Response, token: str, settings: Settings) -> N
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def register(
     payload: RegisterIn,
+    request: Request,
     response: Response,
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> User:
+    register_key = f"register:{client_ip(request)}"
+    retry_after = limiter.check(register_key, limit=REGISTER_LIMIT)
+    if retry_after:
+        wait = int(retry_after) + 1
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"too many registrations from this client; retry in {wait}s",
+            headers={"Retry-After": str(wait)},
+        )
+
     email = payload.email.lower()
     existing = db.scalar(select(User).where(User.email == email))
     if existing is not None:
@@ -72,13 +88,24 @@ def register(
 @router.post("/login", response_model=UserOut)
 def login(
     payload: LoginIn,
+    request: Request,
     response: Response,
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> User:
+    key = f"login:{client_ip(request)}:{payload.email.lower()}"
+    retry_after = limiter.check(key)
+    if retry_after:
+        wait = int(retry_after) + 1
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"too many failed attempts; retry in {wait}s",
+            headers={"Retry-After": str(wait)},
+        )
     user = db.scalar(select(User).where(User.email == payload.email.lower()))
     if user is None or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    limiter.clear(key)
 
     # Opportunistic purge: expiry is otherwise enforced only at read time.
     purge_expired_sessions(db)

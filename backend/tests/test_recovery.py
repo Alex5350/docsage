@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy.orm import Session as OrmSession
 from sqlalchemy.orm import sessionmaker
 
+from docsage_api.core.rate_limit import REGISTER_LIMIT
 from docsage_api.core.security import new_session_token
 from docsage_api.db.models import Document, User
 from docsage_api.db.models import Session as DbSession
@@ -125,3 +126,65 @@ def test_login_purges_expired_sessions(client, db_engine):
         sessions = db.query(DbSession).filter(DbSession.user_id == user_id).all()
         assert sessions, "login created a fresh session"
         assert all(s.expires_at > datetime.now(UTC) for s in sessions)
+
+
+def test_login_rate_limits_after_ten_failures(client):
+    import uuid
+
+    from docsage_api.core.rate_limit import limiter
+
+    email = f"rl-{uuid.uuid4().hex[:8]}@docsage.dev"
+    client.post(
+        "/api/auth/register",
+        json={"email": email, "password": "docsage-demo", "display_name": "RL Tester"},
+    )
+
+    for _ in range(10):
+        status = client.post(
+            "/api/auth/login", json={"email": email, "password": "wrong-password"}
+        ).status_code
+        assert status == 401
+
+    blocked = client.post("/api/auth/login", json={"email": email, "password": "wrong-password"})
+    assert blocked.status_code == 429
+    assert "retry" in blocked.json()["detail"]
+    assert "Retry-After" in blocked.headers
+
+    # even the correct password is refused while the window is hot
+    still_blocked = client.post(
+        "/api/auth/login", json={"email": email, "password": "docsage-demo"}
+    )
+    assert still_blocked.status_code == 429
+
+    # after the window clears (simulated), the correct password succeeds
+    limiter.clear(f"login:testclient:{email}")
+    ok = client.post("/api/auth/login", json={"email": email, "password": "docsage-demo"})
+    assert ok.status_code == 200
+
+
+def test_register_rate_limits_per_client(client):
+    import uuid
+
+    from docsage_api.core import rate_limit
+
+    rate_limit.limiter.clear("register:testclient")
+    for i in range(REGISTER_LIMIT):
+        resp = client.post(
+            "/api/auth/register",
+            json={
+                "email": f"rr-{uuid.uuid4().hex[:8]}-{i}@docsage.dev",
+                "password": "docsage-demo",
+                "display_name": "RR",
+            },
+        )
+        assert resp.status_code == 201
+    blocked = client.post(
+        "/api/auth/register",
+        json={
+            "email": f"rr-{uuid.uuid4().hex[:8]}-x@docsage.dev",
+            "password": "docsage-demo",
+            "display_name": "RR",
+        },
+    )
+    assert blocked.status_code == 429
+    rate_limit.limiter.clear("register:testclient")

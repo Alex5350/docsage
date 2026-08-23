@@ -75,6 +75,16 @@ def db_engine():
 
 
 @pytest.fixture(autouse=True)
+def clear_rate_limiter():
+    # Each test is an independent scenario; production limits stay untouched.
+    from docsage_api.core.rate_limit import limiter
+
+    limiter.reset()
+    yield
+    limiter.reset()
+
+
+@pytest.fixture(autouse=True)
 def clean_db(db_engine):
     with db_engine.begin() as conn:
         conn.execute(text(f"TRUNCATE {', '.join(TABLES)} RESTART IDENTITY CASCADE"))

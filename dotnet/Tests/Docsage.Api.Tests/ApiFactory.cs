@@ -8,6 +8,11 @@ namespace Docsage.Api.Tests;
 
 public sealed class ApiFactory(TestDatabaseFixture fixture) : WebApplicationFactory<Program>
 {
+    static ApiFactory() =>
+        // Test hosts share static state across the run; limits are re-enabled
+        // explicitly by the dedicated RateLimitTests.
+        Docsage.Api.Infrastructure.RateLimiter.Enabled = false;
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");

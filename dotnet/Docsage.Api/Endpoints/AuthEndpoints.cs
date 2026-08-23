@@ -17,8 +17,17 @@ public static class AuthEndpoints
     {
         var group = app.MapGroup("/api/auth");
 
-        group.MapPost("/register", async (RegisterRequest body, NpgsqlConnection db, IPasswordHasher hasher, ISessionService sessions) =>
+        group.MapPost("/register", async (RegisterRequest body, HttpContext http, NpgsqlConnection db,
+            IPasswordHasher hasher, ISessionService sessions) =>
         {
+            var registerKey = $"register:{http.Connection.RemoteIpAddress}";
+            if (RateLimiter.Check(registerKey, RateLimiter.RegisterLimit) is { } registerWait)
+            {
+                var secs = (int)registerWait.TotalSeconds + 1;
+                http.Response.Headers["Retry-After"] = secs.ToString();
+                return Results.Json(
+                    new { detail = $"too many registrations from this client; retry in {secs}s" }, statusCode: 429);
+            }
             var email = body.Email?.Trim().ToLowerInvariant() ?? "";
             if (!email.Contains('@') || email.Length < 3)
                 return ApiError.Validation("A valid email is required");
@@ -48,14 +57,23 @@ public static class AuthEndpoints
             }
         });
 
-        group.MapPost("/login", async (LoginRequest body, NpgsqlConnection db, IPasswordHasher hasher, ISessionService sessions) =>
+        group.MapPost("/login", async (LoginRequest body, HttpContext http, NpgsqlConnection db,
+            IPasswordHasher hasher, ISessionService sessions) =>
         {
             var email = body.Email?.Trim().ToLowerInvariant() ?? "";
+            var key = $"login:{http.Connection.RemoteIpAddress}:{email}";
+            if (RateLimiter.Check(key, RateLimiter.LoginFailureLimit) is { } wait)
+            {
+                var secs = (int)wait.TotalSeconds + 1;
+                http.Response.Headers["Retry-After"] = secs.ToString();
+                return Results.Json(new { detail = $"too many failed attempts; retry in {secs}s" }, statusCode: 429);
+            }
             var user = await db.QuerySingleOrDefaultAsync<UserRow>(
                 "SELECT id, email, password_hash, display_name, role, created_at FROM users WHERE email = @email",
                 new { email });
             if (user is null || !hasher.Verify(user.PasswordHash, body.Password ?? ""))
                 return ApiError.Unauthorized("Invalid credentials");
+            RateLimiter.Clear(key);
 
             await sessions.StartSessionAsync(user.Id);
             return TypedResults.Ok(new UserDto(user.Id, user.Email, user.DisplayName, user.Role));
