@@ -1,11 +1,13 @@
 """Application factory and entry point."""
 
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import OperationalError
 
 from docsage_api.db.session import session_factory
 from docsage_api.routers import admin, auth, chat, documents, health, reviews, topics
@@ -16,8 +18,13 @@ from docsage_api.services.recovery import recover_on_startup
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     # Fail documents stranded in transient pipeline states by a previous
     # crash/restart, and purge expired sessions (see services/recovery.py).
-    with session_factory()() as db:
-        recover_on_startup(db)
+    # Recovery must never kill startup: hosts like the E2E harness boot the
+    # API before its database exists, and /api/health reports db state anyway.
+    try:
+        with session_factory()() as db:
+            recover_on_startup(db)
+    except OperationalError as exc:
+        logging.getLogger(__name__).warning("startup recovery skipped: %s", exc)
     yield
 
 DESCRIPTION = (
