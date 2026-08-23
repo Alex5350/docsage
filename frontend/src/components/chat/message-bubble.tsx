@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { SparklesIcon } from "lucide-react";
 
 import { CitationChips } from "@/components/citation-chips";
@@ -8,8 +9,12 @@ import { MarkdownLite } from "@/components/markdown-lite";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/lib/types";
 
-/** One turn in the transcript: user right, assistant left with citations. */
-export function MessageBubble({ message, streaming = false }: { message: ChatMessage; streaming?: boolean }) {
+/**
+ * One turn in the transcript: user right, assistant left with citations.
+ * Memoized because every streamed token re-renders the page — prior bubbles
+ * take the same props and must skip re-rendering (and markdown re-parsing).
+ */
+function MessageBubbleImpl({ message, streaming = false }: { message: ChatMessage; streaming?: boolean }) {
   if (message.role === "user") {
     return (
       <div className="flex justify-end">
@@ -47,3 +52,5 @@ export function MessageBubble({ message, streaming = false }: { message: ChatMes
     </div>
   );
 }
+
+export const MessageBubble = memo(MessageBubbleImpl);

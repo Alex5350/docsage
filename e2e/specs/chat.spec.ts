@@ -88,6 +88,30 @@ test.describe("chat", () => {
     await expect(log.locator('[aria-label^="Citation"]').first()).toBeVisible();
   });
 
+  test("citation chips open a detail popover; Escape closes it", async ({ page }) => {
+    await registerViaUi(page, uniqueEmail("cite"), DEMO_PASSWORD, "Cite Checker");
+    await uploadAndWaitReady(page, "press-release.md");
+
+    await page.goto("/chat");
+    await startConversation(page);
+    const { citations } = await askAndWait(page, "code COOL-26 paratransit cooling center");
+    expect(citations.length, "demo retrieval always cites its top-k passages").toBeGreaterThan(0);
+
+    // Clicking (not just hovering) the first chip opens its popover, which
+    // carries the same facts as the tooltip: document title + similarity.
+    // (Target the button specifically — the chips' <ul aria-label="Citations">
+    // also prefix-matches a bare attribute selector.)
+    await page.getByRole("button", { name: /^Citation 1:/ }).click();
+    const popover = page.getByRole("dialog");
+    await expect(popover).toBeVisible();
+    const firstTitle = citations[0].replace(/^Citation \d+:\s*/, "").replace(/, page \d+$/, "");
+    await expect(popover).toContainText(firstTitle);
+    await expect(popover).toContainText(/similarity \d+%/);
+
+    await page.keyboard.press("Escape");
+    await expect(popover).toBeHidden();
+  });
+
   test("a brand-new user sees the welcome state with suggested questions", async ({ page }) => {
     await registerViaUi(page, uniqueEmail("fresh"), DEMO_PASSWORD, "Fresh Checker");
 

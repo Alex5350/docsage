@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -48,7 +49,7 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
   });
 }
 
-export function MarkdownLite({
+export const MarkdownLite = memo(function MarkdownLite({
   content,
   className,
 }: {
@@ -69,3 +70,4 @@ export function MarkdownLite({
     </div>
   );
 }
+);

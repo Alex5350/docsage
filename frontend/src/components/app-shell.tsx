@@ -9,6 +9,7 @@ import {
   LogOutIcon,
   MenuIcon,
   MessageSquareIcon,
+  TagsIcon,
   UploadCloudIcon,
   FolderOpenIcon,
 } from "lucide-react";
@@ -73,6 +74,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     ...(isAdmin || pendingReviews > 0
       ? [{ href: "/reviews", label: "Reviews", icon: ClipboardCheckIcon, count: pendingReviews }]
       : []),
+    // /admin/topics nests under /admin — the longest matching href wins the
+    // active highlight below so only one item lights up at a time.
+    ...(isAdmin ? [{ href: "/admin/topics", label: "Topics", icon: TagsIcon }] : []),
     ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: LayoutDashboardIcon }] : []),
   ];
 
@@ -86,7 +90,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  // The longest matching href is the active one (a nested route outranks its
+  // section root, e.g. /admin/topics over /admin).
+  const activeHref = nav
+    .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
+    .reduce<string | null>(
+      (best, item) => (best === null || item.href.length > best.length ? item.href : best),
+      null,
+    );
 
   return (
     <div className="flex h-svh flex-col overflow-hidden bg-background">
@@ -104,10 +115,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  aria-current={isActive(item.href) ? "page" : undefined}
+                  aria-current={activeHref === item.href ? "page" : undefined}
                   className={cn(
                     "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-                    isActive(item.href)
+                    activeHref === item.href
                       ? "bg-accent text-accent-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground",
                   )}
@@ -142,7 +153,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   const Icon = item.icon;
                   return (
                     <DropdownMenuItem key={item.href} asChild>
-                      <Link href={item.href} aria-current={isActive(item.href) ? "page" : undefined}>
+                      <Link href={item.href} aria-current={activeHref === item.href ? "page" : undefined}>
                         <Icon aria-hidden />
                         {item.label}
                         {item.count ? (

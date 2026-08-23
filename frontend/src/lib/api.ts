@@ -215,35 +215,60 @@ export async function streamChatMessage(
     signal,
   });
   if (!response.ok) throw await parseError(response);
+  // A proxy or error page answering 200 with HTML would otherwise stream as
+  // zero parseable events and render an empty answer.
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("text/event-stream")) {
+    throw new ApiError(response.status, `Expected an event stream but received '${contentType}'.`);
+  }
   if (!response.body) throw new ApiError(0, "The response had no body to stream.");
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let terminal = false;
 
-  const handleChunk = (chunk: string) => {
-    // SSE events are separated by blank lines; each event's payload is one or
-    // more `data:` lines. The backend emits single-line JSON payloads.
-    const raw = chunk.replace(/^\s*data:\s?/, "");
+  const handleLine = (line: string) => {
+    // SSE events are separated by blank lines; each event's payload is one
+    // `data:` line (multi-line data joining is a documented non-goal — the
+    // backend emits single-line JSON payloads).
+    const raw = line.replace(/^\s*data:\s?/, "");
     if (!raw) return;
+    let event: ChatStreamEvent;
     try {
-      onEvent(JSON.parse(raw) as ChatStreamEvent);
+      event = JSON.parse(raw) as ChatStreamEvent;
     } catch {
-      // Ignore keep-alives / partial non-JSON lines.
+      return; // keep-alive comments / partial non-JSON lines
     }
+    onEvent(event);
+    if (event.type === "error") terminal = true; // the stream is dead; stop reading
   };
 
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
+  const consume = (text: string) => {
+    buffer += text;
     for (;;) {
       const newlineIndex = buffer.indexOf("\n");
       if (newlineIndex === -1) break;
       const line = buffer.slice(0, newlineIndex).replace(/\r$/, "");
       buffer = buffer.slice(newlineIndex + 1);
-      handleChunk(line);
+      handleLine(line);
+      if (terminal) return;
     }
+  };
+
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      consume(decoder.decode(value, { stream: true }));
+      if (terminal) return;
+    }
+    // Final decoder flush: a multi-byte character split at the exact end of
+    // the stream would otherwise be dropped.
+    consume(decoder.decode());
+    handleLine(buffer.replace(/\r$/, ""));
+  } finally {
+    // Releases the connection on every exit path — early return, abort, error.
+    await reader.cancel().catch(() => {});
   }
-  handleChunk(buffer.replace(/\r$/, ""));
 }
