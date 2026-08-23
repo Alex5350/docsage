@@ -66,7 +66,10 @@ public static class TopicEndpoints
                     RETURNING id, name, description, created_by, created_at
                     """,
                     new { Id = Guid.NewGuid(), Name = body.Name.Trim(), Description = body.Description ?? "", CreatedBy = user.Id });
-                return TypedResults.Created($"/api/topics/{topic.Id}", new { id = topic.Id, name = topic.Name, description = topic.Description });
+                // Contract parity: the created topic carries smes: [] like the
+                // reference — clients append it straight into their lists.
+                return TypedResults.Created($"/api/topics/{topic.Id}",
+                    new TopicDto(topic.Id, topic.Name, topic.Description, []));
             }
             catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UniqueViolation)
             {
