@@ -23,7 +23,7 @@ npx playwright test
 | `admin.spec.ts` | Admin surface | `/admin` renders stat cards + pipeline distribution; "Admin cross-search" opens an admin-scope session (badge "Admin · all documents") whose answer cites the admin's personal drill log; non-admins get no Admin nav and an "Admins only" panel. |
 | `theming-navigation.spec.ts` | Chrome & theming | Landing hero + CTA to `/login`; theme toggle flips `dark`↔`light` on `<html>` and persists via localStorage across reload; the demo-mode banner shows on app pages. |
 
-Thirty tests total, run serially (`workers: 1`) because the features under test
+Thirty-one tests total, run serially (`workers: 1`) because the features under test
 share one database story (uploads accumulate, reviews gate library visibility).
 
 ## Prerequisites
@@ -92,14 +92,17 @@ caught: register not setting the session cookie, and
 `global-setup.ts` then:
 
 1. checks the docker database is reachable on 5433,
-2. terminates any leftover connections, drops, recreates, migrates, and seeds
-   `docsage_e2e` (the seeder pushes the demo corpus through the **real**
-   pipeline with the demo embedding provider),
+2. creates `docsage_e2e` only when absent, migrates, and reseeds it via the
+   seeder's truncate-and-reseed (the seeder pushes the demo corpus through
+   the **real** pipeline with the demo embedding provider). The database is
+   deliberately NOT dropped each run: Postgres assigns pgvector's `vector`
+   type a fresh OID in every new database incarnation, and pooled server
+   connections would keep writing against the stale OID,
 3. generates the fixture corpus if `e2e/fixtures/` is missing.
 
-`global-teardown.ts` drops `docsage_e2e`. Nothing persists between runs -
-re-runs are deterministic, unique emails/titles guard within-run collisions
-(`uniqueEmail()` in `helpers/stack.ts`).
+`global-teardown.ts` drops `docsage_e2e` for a tidy `psql -l`; re-runs are
+deterministic regardless, and unique emails/titles guard within-run
+collisions (`uniqueEmail()` in `helpers/stack.ts`).
 
 ### Seeded accounts (password `docsage-demo`)
 

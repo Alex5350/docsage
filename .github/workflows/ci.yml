@@ -36,7 +36,7 @@ jobs:
           python-version: "3.13"
       - run: uv sync --dev
       - run: uv run ruff check src tests
-      - run: uv run pytest -q
+      - run: uv run pytest -q --cov=docsage_api --cov-report=term
 
   frontend:
     runs-on: ubuntu-latest
@@ -86,10 +86,15 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.13"
+      - name: cache nuget packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: docsage-nuget-${{ hashFiles('dotnet/**/*.csproj') }}
       - name: migrate ci database
         working-directory: backend
         run: uv run alembic upgrade head
-      - run: dotnet test
+      - run: dotnet test --collect:"XPlat Code Coverage"
 
   e2e:
     runs-on: ubuntu-latest
@@ -116,10 +121,22 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: e2e/package-lock.json
+          cache-dependency-path: |
+            e2e/package-lock.json
+            frontend/package-lock.json
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.13"
+      - name: cache nuget packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: docsage-nuget-${{ hashFiles('dotnet/**/*.csproj') }}
+      - name: cache playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: docsage-playwright-${{ hashFiles('e2e/package-lock.json') }}
       - run: npm ci
       - name: install frontend dependencies
         working-directory: frontend
