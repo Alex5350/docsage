@@ -88,6 +88,9 @@ providers, and the upload screen's provider cards light up automatically.
 ## Documentation
 
 - **[Onboarding](docs/onboarding.md)** - clone to chatting in ten minutes
+- **[Provider setup](docs/providers.md)** - step-by-step API keys for Gemini,
+  OpenAI, OpenAI-compatible endpoints (vLLM/Ollama/LiteLLM), and how to add a
+  new provider
 - **[The questions we had to answer](docs/challenges.md)** - the build
   narrative: why enrichment, why 1536 dimensions, why SMEs can't self-approve
 - **[Embedding research](docs/embedding-research.md)** - Gemini Embedding 2

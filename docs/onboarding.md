@@ -117,12 +117,17 @@ db/seed-corpus/  the eight demo documents (real docx/xlsx/pdf/png/md/txt/csv)
 
 ## 7. Turning on real providers
 
-1. Gemini: create a key at https://aistudio.google.com/apikey → put it in
-   `backend/.env` as `GEMINI_API_KEY`. The upload screen's Gemini card
-   unlocks automatically (health endpoint reports it).
-2. OpenAI: key from https://platform.openai.com/api-keys → `OPENAI_API_KEY`.
-3. Restart the backend. New uploads offer the real providers; existing demo
-   documents keep working (vector spaces are provider-qualified - ADR 0003).
+Full step-by-step guide - including OpenAI-compatible endpoints (vLLM,
+Ollama, LiteLLM) and what adding a brand-new provider involves - lives in
+**[docs/providers.md](providers.md)**. The short version:
+
+1. Get a key (Gemini: https://aistudio.google.com/apikey · OpenAI:
+   https://platform.openai.com/api-keys).
+2. Add it to `backend/.env` **and set `DOCSAGE_DEMO_MODE=false`** - keys
+   alone don't activate providers while demo mode is on.
+3. Restart the backend; `/api/health` flips `"providers"` to true and the
+   upload screen's provider cards unlock. Existing demo documents keep
+   working (vector spaces are provider-qualified - ADR 0003).
 
 Cost intuition (see `docs/embedding-research.md`): the entire seed corpus
 costs well under one cent on either provider.
