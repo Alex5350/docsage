@@ -55,6 +55,25 @@ npx playwright test -g "cooling centers"       # by test-title regex
 npx playwright test upload-multiformat:83      # by line number
 ```
 
+## Running against the ASP.NET Core backend
+
+The same 31 tests run unchanged against the .NET parity API - that is the
+contract-parity guarantee (ADR 0001) made executable:
+
+```bash
+npm run test:dotnet                 # E2E_BACKEND=dotnet playwright test
+npm run test:dotnet:headed          # same, headed
+E2E_BACKEND=dotnet npx playwright test chat -g "isolation"   # any filter works
+```
+
+`E2E_BACKEND` only swaps which server occupies :8100 (uvicorn vs
+`dotnet run --project Docsage.Api`); the database, seed, fixtures, and
+frontend are identical. CI runs both variants. A test that passes on
+FastAPI but fails here is a parity bug - see `docs/CONTRACT.md` for the
+binding behavior and fix the .NET side (two examples this suite already
+caught: register not setting the session cookie, and
+`documents.embedding_model` missing from the summary DTO).
+
 ## How the run is wired
 
 `playwright.config.ts` starts two web servers before any test runs

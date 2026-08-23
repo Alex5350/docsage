@@ -1,6 +1,19 @@
 import { defineConfig } from "@playwright/test";
 
 /**
+ * Which backend the suite drives: E2E_BACKEND=fastapi (default) or
+ * E2E_BACKEND=dotnet for the ASP.NET Core parity implementation. Both serve
+ * the same /api contract on :8100 against the same isolated database, so the
+ * identical tests run unchanged against either runtime — that is the
+ * contract-parity guarantee (ADR 0001). `npm run test:dotnet` is the shortcut.
+ */
+const backend = process.env.E2E_BACKEND === "dotnet" ? "dotnet" : "fastapi";
+const backendServer =
+  backend === "dotnet"
+    ? { command: "dotnet run --project Docsage.Api --urls http://localhost:8100", cwd: "../dotnet" }
+    : { command: "uv run uvicorn docsage_api.main:app --port 8100", cwd: "../backend" };
+
+/**
  * DocSage E2E configuration.
  *
  * `npx playwright test` boots everything the suite needs:
@@ -38,8 +51,8 @@ export default defineConfig({
   globalTeardown: "./global-teardown.ts",
   webServer: [
     {
-      command: "uv run uvicorn docsage_api.main:app --port 8100",
-      cwd: "../backend",
+      command: backendServer.command,
+      cwd: backendServer.cwd,
       url: "http://localhost:8100/api/health",
       reuseExistingServer: false,
       timeout: 120_000,

@@ -8,6 +8,8 @@
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
     "test:headed:ui": "playwright test --ui-headed",
+    "test:dotnet": "E2E_BACKEND=dotnet playwright test",
+    "test:dotnet:headed": "E2E_BACKEND=dotnet playwright test --headed",
     "report": "playwright show-report",
     "fixtures": "cd ../backend && uv run python ../e2e/generate-fixtures.py --out ../e2e/fixtures"
   },

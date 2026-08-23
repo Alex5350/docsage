@@ -38,15 +38,17 @@ async function bootstrap() {
     );
   }
 
-  // 2. Recreate the isolated e2e database, migrate, and seed demo data.
-  //    The backend webServer is already up at this point (Playwright starts
-  //    webServers before globalSetup) and its health check may hold a pooled
-  //    connection to a leftover docsage_e2e, which would block DROP DATABASE
-  //    with ObjectInUse. Terminate those sessions first — the backend uses
-  //    pool_pre_ping, so it transparently reconnects to the fresh database.
+  // 2. Ensure the isolated e2e database exists, migrate, and reseed.
+  //    Deliberately NO drop/recreate: Postgres assigns the pgvector `vector`
+  //    type a fresh OID in every new database incarnation, and pooled server
+  //    connections (Playwright boots web servers before this setup runs)
+  //    would keep writing against the stale OID — Npgsql then fails every
+  //    vector operation with "cache lookup failed for type …". Creating the
+  //    database only when absent keeps OIDs stable across runs; the seed's
+  //    --fresh truncates and reseeds the data instead.
   const env = { DOCSAGE_DATABASE_URL: DB_URL, DOCSAGE_SESSION_SECRET: "e2e-session-secret", DOCSAGE_DEMO_MODE: "true" };
   run("uv", ["run", "python", "-c",
-    "import psycopg; admin = psycopg.connect('host=localhost port=5433 user=docsage password=docsage dbname=docsage', autocommit=True); admin.execute(\"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'docsage_e2e' AND pid <> pg_backend_pid()\"); admin.execute('DROP DATABASE IF EXISTS docsage_e2e'); admin.execute('CREATE DATABASE docsage_e2e'); admin.close()"], {}, BACKEND);
+    "import psycopg; admin = psycopg.connect('host=localhost port=5433 user=docsage password=docsage dbname=docsage', autocommit=True); exists = admin.execute('SELECT 1 FROM pg_database WHERE datname = %s', ('docsage_e2e',)).fetchone(); admin.execute('CREATE DATABASE docsage_e2e') if not exists else None; admin.close()"], {}, BACKEND);
   run("uv", ["run", "alembic", "upgrade", "head"], env, BACKEND);
   run("uv", ["run", "python", "-m", "docsage_api.seed", "--fresh"], env, BACKEND);
 
