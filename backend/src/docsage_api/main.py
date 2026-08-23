@@ -1,10 +1,24 @@
 """Application factory and entry point."""
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from docsage_api.db.session import session_factory
 from docsage_api.routers import admin, auth, chat, documents, health, reviews, topics
+from docsage_api.services.recovery import recover_on_startup
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    # Fail documents stranded in transient pipeline states by a previous
+    # crash/restart, and purge expired sessions (see services/recovery.py).
+    with session_factory()() as db:
+        recover_on_startup(db)
+    yield
 
 DESCRIPTION = (
     "Agentic RAG document intelligence: ingestion, enrichment, review, and "
@@ -29,7 +43,9 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="DocSage API",
         description=DESCRIPTION,
+        version="0.1.0",
         openapi_tags=TAGS_METADATA,
+        lifespan=lifespan,
     )
 
     app.add_middleware(

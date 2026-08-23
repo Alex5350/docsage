@@ -19,6 +19,7 @@ builder.Services
     .AddChatAnswerProviders()
     .AddExtraction()
     .AddEnricher()
+    .AddRecovery()
     .AddIngestionPipeline()
     .AddDocumentsService()
     .AddRetrievalService()

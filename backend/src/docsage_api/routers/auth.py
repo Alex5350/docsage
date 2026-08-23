@@ -13,6 +13,7 @@ from docsage_api.db.models import User
 from docsage_api.db.session import get_db
 from docsage_api.dependencies import SESSION_COOKIE, get_current_user
 from docsage_api.schemas.auth import LoginIn, RegisterIn, UserOut
+from docsage_api.services.recovery import purge_expired_sessions
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -53,6 +54,8 @@ def register(
     db.commit()
     db.refresh(user)
 
+    # Opportunistic purge: expiry is otherwise enforced only at read time.
+    purge_expired_sessions(db)
     token = new_session_token()
     db.add(
         DbSession(
@@ -77,6 +80,8 @@ def login(
     if user is None or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
+    # Opportunistic purge: expiry is otherwise enforced only at read time.
+    purge_expired_sessions(db)
     token = new_session_token()
     db.add(
         DbSession(

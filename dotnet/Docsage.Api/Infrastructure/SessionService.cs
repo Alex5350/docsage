@@ -64,6 +64,8 @@ public sealed class SessionService(NpgsqlConnection db, IHttpContextAccessor htt
     public async Task<string> StartSessionAsync(Guid userId, CancellationToken ct = default)
     {
         var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+        // Opportunistic purge: expiry is otherwise enforced only at read time.
+        await db.ExecuteAsync("DELETE FROM sessions WHERE expires_at <= now()", ct);
         await db.ExecuteAsync(
             "INSERT INTO sessions (token, user_id, expires_at) VALUES (@token, @userId, @expiresAt)",
             new { token, userId, expiresAt = DateTimeOffset.UtcNow.Add(SessionLifetime) });
