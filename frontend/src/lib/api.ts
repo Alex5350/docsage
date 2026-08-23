@@ -4,11 +4,18 @@
  * round-trips. Non-2xx JSON errors surface as ApiError {status, detail}.
  */
 import type {
+  AdminOverview,
   ChatMessage,
   ChatScope,
   ChatSession,
   ChatStreamEvent,
+  DocumentDetail,
+  DocumentScope,
+  DocumentSummary,
+  EmbeddingProvider,
   HealthStatus,
+  ReviewDecision,
+  Topic,
   User,
 } from "@/lib/types";
 
@@ -74,6 +81,93 @@ export async function logout(): Promise<void> {
 
 export function getMe(): Promise<User> {
   return requestJson<User>("/auth/me");
+}
+
+/* -- documents ------------------------------------------------------------- */
+
+export async function listDocuments(scope: DocumentScope): Promise<DocumentSummary[]> {
+  const data = await requestJson<{ items: DocumentSummary[] }>(`/documents?scope=${scope}`);
+  return data.items;
+}
+
+export function getDocument(id: string): Promise<DocumentDetail> {
+  return requestJson<DocumentDetail>(`/documents/${id}`);
+}
+
+/** Multipart upload; the pipeline starts in the background (202 + summary). */
+export async function uploadDocument(body: {
+  file: File;
+  provider: EmbeddingProvider;
+  scope: DocumentScope;
+  title?: string;
+  topicId?: string;
+}): Promise<DocumentSummary> {
+  const form = new FormData();
+  form.append("file", body.file);
+  form.append("provider", body.provider);
+  form.append("scope", body.scope);
+  if (body.title?.trim()) form.append("title", body.title.trim());
+  if (body.topicId) form.append("topic_id", body.topicId);
+
+  // No explicit content-type: the browser must set the multipart boundary.
+  const response = await fetch(`${API_BASE}/api/documents`, {
+    method: "POST",
+    credentials: "include",
+    headers: { accept: "application/json" },
+    body: form,
+  });
+  if (!response.ok) throw await parseError(response);
+  return (await response.json()) as DocumentSummary;
+}
+
+export async function deleteDocument(id: string): Promise<void> {
+  await requestJson<void>(`/documents/${id}`, { method: "DELETE" });
+}
+
+/* -- topics + SME designations --------------------------------------------- */
+
+export async function listTopics(): Promise<Topic[]> {
+  const data = await requestJson<{ items: Topic[] }>("/topics");
+  return data.items;
+}
+
+export function createTopic(body: { name: string; description?: string }): Promise<Topic> {
+  return requestJson<Topic>("/topics", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function addTopicSme(topicId: string, userId: string): Promise<void> {
+  return requestJson<void>(`/topics/${topicId}/smes`, {
+    method: "POST",
+    body: JSON.stringify({ user_id: userId }),
+  });
+}
+
+export function removeTopicSme(topicId: string, userId: string): Promise<void> {
+  return requestJson<void>(`/topics/${topicId}/smes/${userId}`, { method: "DELETE" });
+}
+
+/* -- SME review queue ------------------------------------------------------- */
+
+export async function listPendingReviews(): Promise<DocumentSummary[]> {
+  const data = await requestJson<{ items: DocumentSummary[] }>("/reviews/pending");
+  return data.items;
+}
+
+export function decideReview(
+  documentId: string,
+  decision: ReviewDecision,
+  note?: string,
+): Promise<DocumentSummary> {
+  return requestJson<DocumentSummary>(`/reviews/${documentId}`, {
+    method: "POST",
+    body: JSON.stringify(note?.trim() ? { decision, note: note.trim() } : { decision }),
+  });
+}
+
+/* -- admin overview --------------------------------------------------------- */
+
+export function getAdminOverview(): Promise<AdminOverview> {
+  return requestJson<AdminOverview>("/admin/overview");
 }
 
 /* -- chat sessions -------------------------------------------------------- */

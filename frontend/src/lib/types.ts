@@ -37,6 +37,7 @@ export interface DocumentSummary {
   status: "queued" | "extracting" | "enriching" | "embedding" | "ready" | "failed";
   status_error: string | null;
   embedding_provider: "gemini" | "openai" | "demo";
+  embedding_model: string;
   topic: { id: string; name: string } | null;
   review_status: "not_required" | "pending_sme" | "approved" | "rejected";
   chunk_count: number;
@@ -61,6 +62,21 @@ export interface Approval {
 export interface DocumentDetail extends DocumentSummary {
   enrichments: Enrichment[];
   approvals: Approval[];
+}
+
+export type DocumentStatus = DocumentSummary["status"];
+export type ReviewStatus = DocumentSummary["review_status"];
+export type EmbeddingProvider = DocumentSummary["embedding_provider"];
+
+export type ReviewDecision = "approved" | "rejected";
+
+export interface AdminOverview {
+  users: number;
+  total_documents: number;
+  personal_documents: number;
+  library_documents: number;
+  pending_reviews: number;
+  pipeline: Partial<Record<DocumentStatus, number>>;
 }
 
 export interface ChatSession {

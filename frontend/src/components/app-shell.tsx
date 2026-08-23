@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
+  ClipboardCheckIcon,
+  LayoutDashboardIcon,
   LogOutIcon,
   MenuIcon,
   MessageSquareIcon,
@@ -25,14 +27,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { listPendingReviews } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-const NAV = [
-  { href: "/chat", label: "Chat", icon: MessageSquareIcon },
-  { href: "/upload", label: "Upload", icon: UploadCloudIcon },
-  { href: "/documents", label: "Documents", icon: FolderOpenIcon },
-  // Slots for later phases: Reviews (/reviews) and Admin (/admin).
-] as const;
+interface NavItem {
+  href: string;
+  label: string;
+  icon: typeof MessageSquareIcon;
+  /** Optional pending-count chip (reviews). */
+  count?: number;
+}
 
 /** Application chrome: brand, primary nav, user menu, theme toggle. */
 export function AppShell({ children }: { children: ReactNode }) {
@@ -40,6 +44,37 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
+  const [pendingReviews, setPendingReviews] = useState(0);
+
+  const isAdmin = user?.role === "admin";
+
+  // Cheap probe on sign-in + each navigation: shows the Reviews entry to SMEs
+  // (non-empty queue) and admins regardless. Failures (incl. 403 for members
+  // without designations) simply hide the item.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    listPendingReviews()
+      .then((items) => {
+        if (!cancelled) setPendingReviews(items.length);
+      })
+      .catch(() => {
+        if (!cancelled) setPendingReviews(0);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, pathname]);
+
+  const nav: NavItem[] = [
+    { href: "/chat", label: "Chat", icon: MessageSquareIcon },
+    { href: "/upload", label: "Upload", icon: UploadCloudIcon },
+    { href: "/documents", label: "Documents", icon: FolderOpenIcon },
+    ...(isAdmin || pendingReviews > 0
+      ? [{ href: "/reviews", label: "Reviews", icon: ClipboardCheckIcon, count: pendingReviews }]
+      : []),
+    ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: LayoutDashboardIcon }] : []),
+  ];
 
   async function handleSignOut() {
     setSigningOut(true);
@@ -63,7 +98,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
-            {NAV.map((item) => {
+            {nav.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
@@ -79,6 +114,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                 >
                   <Icon className="size-4" aria-hidden />
                   {item.label}
+                  {item.count ? (
+                    <span
+                      aria-label={`${item.count} pending`}
+                      className="ml-0.5 rounded-full bg-primary/15 px-1.5 py-px font-mono text-[0.65rem] font-semibold text-primary"
+                    >
+                      {item.count}
+                    </span>
+                  ) : null}
                 </Link>
               );
             })}
@@ -95,13 +138,18 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44 md:hidden">
-                {NAV.map((item) => {
+                {nav.map((item) => {
                   const Icon = item.icon;
                   return (
                     <DropdownMenuItem key={item.href} asChild>
-                      <Link href={item.href}>
+                      <Link href={item.href} aria-current={isActive(item.href) ? "page" : undefined}>
                         <Icon aria-hidden />
                         {item.label}
+                        {item.count ? (
+                          <span className="ml-auto rounded-full bg-primary/15 px-1.5 py-px font-mono text-[0.65rem] font-semibold text-primary">
+                            {item.count}
+                          </span>
+                        ) : null}
                       </Link>
                     </DropdownMenuItem>
                   );
