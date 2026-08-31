@@ -44,6 +44,10 @@ public static class ReviewEndpoints
                 return ApiError.Conflict("Document is not pending SME review");
             if (user.Role != "admin" && !row.PendingReviewer)
                 return ApiError.Forbidden("Only an SME of this topic or an admin can review");
+            // No self-approval (ADR 0005): the uploader needs someone else to decide,
+            // admins included, or the audit trail means nothing.
+            if (row.OwnerId == user.Id)
+                return ApiError.Forbidden("The uploader cannot review their own document");
 
             await db.ExecuteAsync(
                 """

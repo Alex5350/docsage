@@ -109,6 +109,64 @@ public sealed class ReviewFlowTests(TestDatabaseFixture fixture) : IAsyncLifetim
     }
 
     [SkippableFact]
+    public async Task Uploader_Cannot_Approve_Own_Library_Document()
+    {
+        Skip.IfNot(fixture.Available, "Postgres at localhost:5433 is not reachable");
+        using var adminClient = _factory.CreateClient();
+        using var smeClient = _factory.CreateClient();
+
+        var adminEmail = $"selfapp-{Guid.NewGuid():N}@example.com";
+        var smeEmail = $"selfsme-{Guid.NewGuid():N}@example.com";
+        await adminClient.RegisterAndLoginAsync(adminEmail, displayName: "Admin");
+        await PromoteToAdminAsync(adminEmail);
+        await adminClient.LoginAsync(adminEmail, "password123"); // fresh session with admin role
+        await smeClient.RegisterAndLoginAsync(smeEmail, displayName: "Sme");
+
+        var topicResponse = await adminClient.PostAsJsonAsync("/api/topics",
+            new { name = $"TravelDocs-{Guid.NewGuid():N}"[..40], description = "Travel documents" });
+        Assert.True(topicResponse.StatusCode == HttpStatusCode.Created, $"topics failed: {await topicResponse.Content.ReadAsStringAsync()}");
+        using var topic = await topicResponse.ReadJsonAsync();
+        var topicId = topic.RootElement.GetProperty("id").GetString();
+
+        using var smeMe = await smeClient.GetAsync("/api/auth/me");
+        using var smeMeJson = await smeMe.ReadJsonAsync();
+        var smeId = smeMeJson.RootElement.GetProperty("id").GetString();
+        var designate = await adminClient.PostAsJsonAsync($"/api/topics/{topicId}/smes", new { user_id = smeId });
+        Assert.Equal(HttpStatusCode.Created, designate.StatusCode);
+
+        var document = await adminClient.UploadTextDocumentAsync(
+            "Travel reimbursements require itemized receipts per the expense schedule. " +
+            "Missing receipts are reimbursed at the flat meal rate only. International " +
+            "travel needs pre-approval from the operations desk.",
+            filename: "travel-policy.txt", scope: "library", topicId: topicId, title: "Travel Policy");
+        var documentId = document.GetProperty("id").GetGuid();
+        var ready = await adminClient.WaitForStatusAsync(documentId);
+        Assert.Equal("pending_sme", ready.GetProperty("review_status").GetString());
+
+        // The owner is an admin here and still cannot decide their own upload.
+        var selfApprove = await adminClient.PostAsJsonAsync($"/api/reviews/{documentId}",
+            new { decision = "approved", note = "trust me" });
+        Assert.Equal(HttpStatusCode.Forbidden, selfApprove.StatusCode);
+        var selfReject = await adminClient.PostAsJsonAsync($"/api/reviews/{documentId}",
+            new { decision = "rejected", note = "trust me" });
+        Assert.Equal(HttpStatusCode.Forbidden, selfReject.StatusCode);
+        var detail = await selfApprove.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Contains("own document", detail.GetProperty("detail").GetString());
+
+        // Another SME of the topic decides it instead.
+        var approve = await smeClient.PostAsJsonAsync($"/api/reviews/{documentId}",
+            new { decision = "approved", note = "second pair of eyes" });
+        Assert.Equal(HttpStatusCode.OK, approve.StatusCode);
+        using var approved = await approve.ReadJsonAsync();
+        Assert.Equal("approved", approved.RootElement.GetProperty("review_status").GetString());
+
+        // Sibling tests in this collection share the database (one asserts an
+        // empty member-visible library), so the admin removes the approved doc.
+        var cleanup = await adminClient.DeleteAsync($"/api/documents/{documentId}");
+        Assert.Equal(HttpStatusCode.NoContent, cleanup.StatusCode);
+    }
+
+    [SkippableFact]
     public async Task Non_Admin_Cannot_Upload_Library_Documents()
     {
         Skip.IfNot(fixture.Available, "Postgres at localhost:5433 is not reachable");

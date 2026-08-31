@@ -162,7 +162,7 @@ POST /api/topics/{id}/smes {user_id}                            -> 201 (admin)
 DELETE /api/topics/{id}/smes/{user_id}                          -> 204 (admin)
 
 GET  /api/reviews/pending              -> {items:[DocumentSummary]} (SME: topics they cover; admin: all pending)
-POST /api/reviews/{document_id} {decision:"approved"|"rejected", note?} -> 200 DocumentSummary (SME-of-topic | admin)
+POST /api/reviews/{document_id} {decision:"approved"|"rejected", note?} -> 200 DocumentSummary (SME-of-topic | admin; never the document's owner, admins included: no self-approval)
 
 POST /api/chat/sessions {scope:"personal"|"admin"}              -> 201 {id,scope,title,created_at}
        (scope=admin requires role admin)

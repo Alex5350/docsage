@@ -187,3 +187,41 @@ def test_library_upload_requires_admin_and_topic(client: TestClient, db_engine):
         files={"file": ("a.txt", b"content", "text/plain")},
     )
     assert unknown_topic.status_code == 404
+
+
+def test_uploader_cannot_approve_own_library_document(client: TestClient, db_engine):
+    admin = _admin_client(client.app, db_engine)
+    topic = _topic(admin)
+    doc = upload(
+        admin,
+        "own-approval.txt",
+        b"Self approval attempt. Travel reimbursements need itemized receipts. " * 15,
+        "text/plain",
+        scope="library",
+        title="Own Approval Attempt",
+        topic_id=topic["id"],
+    )
+    assert wait_ready(admin, doc["id"])["review_status"] == "pending_sme"
+
+    # The owner is an admin here and still cannot decide their own upload.
+    self_approve = admin.post(
+        f"/api/reviews/{doc['id']}", json={"decision": "approved", "note": "trust me"}
+    )
+    assert self_approve.status_code == 403
+    assert "own document" in self_approve.json()["detail"]
+    self_reject = admin.post(
+        f"/api/reviews/{doc['id']}", json={"decision": "rejected", "note": "trust me"}
+    )
+    assert self_reject.status_code == 403
+    assert admin.get(f"/api/documents/{doc['id']}").json()["review_status"] == "pending_sme"
+
+    # Another SME of the topic decides it instead.
+    quinn = _user_client(client.app, "quinn@example.com")
+    quinn_id = quinn.get("/api/auth/me").json()["id"]
+    designated = admin.post(f"/api/topics/{topic['id']}/smes", json={"user_id": quinn_id})
+    assert designated.status_code == 201
+    decided = quinn.post(
+        f"/api/reviews/{doc['id']}", json={"decision": "approved", "note": "second pair of eyes"}
+    )
+    assert decided.status_code == 200
+    assert decided.json()["review_status"] == "approved"

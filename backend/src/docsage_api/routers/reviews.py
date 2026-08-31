@@ -62,6 +62,13 @@ def decide(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only an SME of the document's topic or an admin can review it",
         )
+    if doc.owner_id == user.id:
+        # No self-approval (ADR 0005): the uploader needs someone else to decide,
+        # admins included, or the audit trail means nothing.
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The uploader cannot review their own document",
+        )
     if doc.review_status != "pending_sme":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
