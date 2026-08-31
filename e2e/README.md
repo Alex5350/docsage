@@ -57,7 +57,7 @@ npx playwright test upload-multiformat:83      # by line number
 
 ## Running against the ASP.NET Core backend
 
-The same 31 tests run unchanged against the .NET parity API - that is the
+The same 36 tests run unchanged against the .NET parity API - that is the
 contract-parity guarantee (ADR 0001) made executable:
 
 ```bash

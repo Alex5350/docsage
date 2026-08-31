@@ -93,9 +93,9 @@ itself.
 | ![Budget question answered with spreadsheet citations](docs/assets/screenshots/04-chat-budget-answer.png) | ![Admin cross-search over every user](docs/assets/screenshots/16-admin-chat-crossuser.png) |
 
 A budget question is answered with citations into the spreadsheet that holds
-the numbers. The admin cross-search reads across every user and every
-pipeline state, and says so on the screen, because a compliance power that is
-invisible is not a control.
+the numbers. The admin cross-search reads across every user and every pipeline
+state except failed, and says so on the screen, because a compliance power
+that is invisible is not a control.
 
 ## What it delivers
 

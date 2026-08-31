@@ -72,8 +72,9 @@ One question, end to end:
    backends, [ADR 0007](docs/adr/0007-cross-runtime-auth-interop.md)).
 2. Scope decides the candidate set: personal chat retrieves the user's own
    documents plus approved library documents; the admin chat scope retrieves
-   across every user and state. Visibility is enforced in the retrieval SQL
-   itself, not in the UI ([ADR 0005](docs/adr/0005-access-model-and-sme-approval.md)).
+   across every user and every state except failed. Visibility is enforced in
+   the retrieval SQL itself, not in the UI
+   ([ADR 0005](docs/adr/0005-access-model-and-sme-approval.md)).
 3. Retrieval computes the distinct providers present in the candidate set and
    embeds the query once per provider (Gemini's documented query-side task
    prefix; OpenAI with the same model and dimensions as ingestion; demo is a
@@ -147,7 +148,7 @@ something specific.
   your dev data never touches.
 
 The dual-backend parity story: the same E2E suite runs unchanged against both
-backends (`npm run test:dotnet`, 31 tests per backend; `E2E_BACKEND` only
+backends (`npm run test:dotnet`, 36 tests per backend; `E2E_BACKEND` only
 swaps which server occupies :8100). A test that passes on FastAPI but fails on
 .NET is a parity bug, and the suite has caught real ones: registration not
 setting the session cookie, and `embedding_model` missing from the document

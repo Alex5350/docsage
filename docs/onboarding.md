@@ -97,7 +97,7 @@ build time (`NEXT_PUBLIC_API_BASE_URL=... npm run build`) since it is
 inlined into the bundle.
 
 **What to expect when switching** - identical behavior for every user-facing
-flow (that is what the E2E suite proves by running the same 31 tests against
+flow (that is what the E2E suite proves by running the same 36 tests against
 each backend), with two deliberate depth differences: the .NET enrichment
 pass is simpler (deterministic stand-ins shaped like the Python artifacts),
 and its Gemini image-embedding path routes through captions rather than
@@ -109,7 +109,7 @@ observable in demo mode.
 ```bash
 cd e2e
 npx playwright test                 # FastAPI (default)
-npm run test:dotnet                 # identical 31 tests against ASP.NET Core
+npm run test:dotnet                 # identical 36 tests against ASP.NET Core
 ```
 
 CI runs both. See [e2e/README.md](../e2e/README.md) for what that proves
