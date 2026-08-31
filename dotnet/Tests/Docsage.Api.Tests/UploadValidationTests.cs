@@ -91,4 +91,19 @@ public sealed class UploadValidationTests(TestDatabaseFixture fixture) : IAsyncL
 
         Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
     }
+
+    [SkippableFact]
+    public async Task Upload_Over_25MB_Is_Rejected_As_Too_Large()
+    {
+        Skip.IfNot(fixture.Available, "Postgres at localhost:5433 is not reachable");
+        using var client = _factory.CreateClient();
+        await client.RegisterAndLoginAsync($"size-{Guid.NewGuid():N}@example.com");
+
+        var response = await UploadAsync(
+            client, new byte[25 * 1024 * 1024 + 1], "huge.txt", "text/plain");
+
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Contains("25MB upload limit", body.GetProperty("detail").GetString());
+    }
 }

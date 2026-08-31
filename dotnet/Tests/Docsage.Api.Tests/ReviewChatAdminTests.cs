@@ -175,6 +175,24 @@ public sealed class ReviewFlowTests(TestDatabaseFixture fixture) : IAsyncLifetim
         var response = await client.PostUploadAsync("x", scope: "library");
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
+
+    [SkippableFact]
+    public async Task Library_Upload_Without_Topic_Is_Rejected()
+    {
+        Skip.IfNot(fixture.Available, "Postgres at localhost:5433 is not reachable");
+        using var client = _factory.CreateClient();
+        var adminEmail = $"libtopic-{Guid.NewGuid():N}@example.com";
+        await client.RegisterAndLoginAsync(adminEmail);
+        await PromoteToAdminAsync(adminEmail);
+        await client.LoginAsync(adminEmail, "password123"); // fresh session with admin role
+
+        // A library doc without a topic can never reach an SME, so it 422s up front
+        // (reference parity with the Python backend).
+        var response = await client.PostUploadAsync("policy body", filename: "policy.txt", scope: "library");
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Contains("topic_id is required for library documents", body.GetProperty("detail").GetString());
+    }
 }
 
 [Collection("database")]

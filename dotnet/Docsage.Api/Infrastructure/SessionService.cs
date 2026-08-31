@@ -112,6 +112,9 @@ public static class ApiError
     public static IResult Conflict(string detail) =>
         TypedResults.Json(new { detail }, statusCode: StatusCodes.Status409Conflict);
 
+    public static IResult PayloadTooLarge(string detail) =>
+        TypedResults.Json(new { detail }, statusCode: StatusCodes.Status413RequestEntityTooLarge);
+
     public static IResult Validation(string detail) =>
         TypedResults.Json(new { detail }, statusCode: StatusCodes.Status422UnprocessableEntity);
 }

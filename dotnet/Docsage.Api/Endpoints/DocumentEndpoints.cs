@@ -12,6 +12,8 @@ namespace Docsage.Api.Endpoints;
 
 public static class DocumentEndpoints
 {
+    private const long MaxUploadBytes = 25 * 1024 * 1024;
+
     private static readonly HashSet<string> AllowedProviders = ["gemini", "openai", "demo"];
     private static readonly Dictionary<string, string> ExtensionMime = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -103,12 +105,17 @@ public static class DocumentEndpoints
 
             if (file is null || file.Length == 0)
                 return ApiError.Validation("file is required");
+            if (file.Length > MaxUploadBytes)
+                return ApiError.PayloadTooLarge("file exceeds the 25MB upload limit");
             if (!AllowedProviders.Contains(provider))
                 return ApiError.Validation("provider must be one of 'gemini', 'openai', 'demo'");
             if (scope is not ("personal" or "library"))
                 return ApiError.Validation("scope must be 'personal' or 'library'");
             if (scope == "library" && user.Role != "admin")
                 return ApiError.Forbidden("Only admins can ingest library documents");
+            // Reference parity: a library doc without a topic can never reach an SME.
+            if (scope == "library" && string.IsNullOrEmpty(topicIdText))
+                return ApiError.Validation("topic_id is required for library documents");
 
             Guid? topicId = null;
             if (!string.IsNullOrEmpty(topicIdText))

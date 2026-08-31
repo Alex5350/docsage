@@ -128,7 +128,7 @@ reach `ready`; an SME designated for the document's topic approves/rejects.
 
 Cookie auth. All bodies JSON unless stated. Errors: `{detail: string}` with
 proper status codes (401 unauthenticated, 403 forbidden, 404 missing, 409
-conflict, 422 validation).
+conflict, 413 upload too large, 422 validation).
 
 ```
 GET  /api/health                          -> {status:"ok", database:"up"|"down",
@@ -147,6 +147,8 @@ GET  /api/documents?scope=personal|library                    -> {items:[Documen
      (personal: own docs only. library: everyone sees approved; admins+SME see all states)
 POST /api/documents  multipart: file, provider, scope, title?, topic_id? (library/admin only)
                                                               -> 202 {DocumentSummary} (pipeline starts)
+     (scope=library also requires topic_id: a topicless library doc can never
+      reach an SME; files over 25MB -> 413)
 GET  /api/documents/{id}                                      -> 200 {DocumentDetail}
      (owner | admin | (library & approved) | SME-of-topic)
 DELETE /api/documents/{id}                                    -> 204 (owner or admin)
